@@ -1,0 +1,20 @@
+{
+  "name": "trackr-smackr",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The Cookie Bouncer - Local-only privacy enforcement.",
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.json && cp src/manifest.json dist/manifest.json && mkdir -p dist/static && cp src/static/popup.html dist/static/popup.html && cp -R src/assets dist/",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "smoke:extension": "node scripts/smoke-extension.mjs",
+    "test:integration": "node tests/integration/extension.integration.mjs"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.268",
+    "@types/node": "^20.11.0",
+    "playwright": "^1.58.2",
+    "typescript": "^5.3.3",
+    "vitest": "^3.2.4"
+  }
+}

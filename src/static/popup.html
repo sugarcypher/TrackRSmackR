@@ -1,0 +1,86 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>TrackRSmackR</title>
+    <style>
+      body {
+        width: 300px;
+        font-family: sans-serif;
+        padding: 10px;
+      }
+
+      h1 {
+        font-size: 16px;
+        color: #d9534f;
+      }
+
+      .log-entry {
+        font-size: 12px;
+        border-bottom: 1px solid #eee;
+        padding: 5px 0;
+      }
+
+      .section-title {
+        margin: 12px 0 6px;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      label {
+        display: block;
+        font-size: 12px;
+        margin-bottom: 4px;
+      }
+
+      select,
+      textarea,
+      button {
+        width: 100%;
+        box-sizing: border-box;
+        font-size: 12px;
+      }
+
+      textarea {
+        min-height: 64px;
+        resize: vertical;
+      }
+
+      button {
+        margin-top: 8px;
+        padding: 6px 8px;
+        border: 1px solid #c9302c;
+        background: #d9534f;
+        color: white;
+        cursor: pointer;
+      }
+
+      #settings-status {
+        margin-top: 6px;
+        font-size: 11px;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>TrackRSmackR Active</h1>
+    <div class="section-title">Policy Settings</div>
+    <label for="policy-mode">Policy Mode</label>
+    <select id="policy-mode">
+      <option value="BALANCED">Balanced (Decay unknown cookies)</option>
+      <option value="STRICT">Strict (Quarantine unknown cookies)</option>
+    </select>
+    <label for="allowlist-input">Allowlist Domains</label>
+    <textarea
+      id="allowlist-input"
+      placeholder="example.com&#10;accounts.google.com"
+    ></textarea>
+    <button id="save-settings" type="button">Save Settings</button>
+    <div id="settings-status"></div>
+
+    <div class="section-title">Recent Activity</div>
+    <p>Recent Activity:</p>
+    <div id="logs">Loading...</div>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>
