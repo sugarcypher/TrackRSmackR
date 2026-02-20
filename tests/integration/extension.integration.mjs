@@ -165,6 +165,72 @@ async function testPopupSettingsRoundTrip(extensionPage) {
   );
 }
 
+async function testPopupIntelligenceVisibility(extensionPage) {
+  const now = Date.now();
+  const auditSeed = [
+    {
+      timestamp: now - 3000,
+      domain: 'tracker.example',
+      name: 'fp_uid',
+      action: 'QUARANTINE',
+      reason: 'Signature Match: Known Tracker',
+      eventType: 'COOKIE_DECISION',
+      policyReason: 'Signature Match: Known Tracker',
+      explanation: 'Known tracker quarantined.',
+      adaptationSignals: ['Possible fingerprint identifier'],
+      outcome: 'REMOVED_AND_QUARANTINED',
+      driftKey: 'tracker.example|QUARANTINE|possible fingerprint identifier'
+    },
+    {
+      timestamp: now - 2000,
+      domain: 'tracker.example',
+      name: 'fp_uid',
+      action: 'QUARANTINE',
+      reason: 'Signature Match: Known Tracker',
+      eventType: 'COOKIE_DECISION',
+      policyReason: 'Signature Match: Known Tracker',
+      explanation: 'Known tracker quarantined.',
+      adaptationSignals: ['Possible fingerprint identifier'],
+      outcome: 'REMOVED_AND_QUARANTINED',
+      driftKey: 'tracker.example|QUARANTINE|possible fingerprint identifier'
+    },
+    {
+      timestamp: now - 1000,
+      domain: 'tracker.example',
+      name: 'fp_uid',
+      action: 'QUARANTINE',
+      reason: 'Signature Match: Known Tracker',
+      eventType: 'COOKIE_DECISION',
+      policyReason: 'Signature Match: Known Tracker',
+      explanation: 'Known tracker quarantined.',
+      adaptationSignals: ['Possible fingerprint identifier'],
+      outcome: 'REMOVED_AND_QUARANTINED',
+      driftKey: 'tracker.example|QUARANTINE|possible fingerprint identifier'
+    }
+  ];
+
+  await storageSet(extensionPage, { auditLog: auditSeed });
+  await extensionPage.reload({ waitUntil: 'domcontentloaded' });
+
+  const uiState = await extensionPage.evaluate(() => {
+    const posture = document.querySelector('#summary-posture')?.textContent?.trim() ?? '';
+    const fingerprint = document.querySelector('#summary-fingerprint')?.textContent?.trim() ?? '';
+    const driftCount = document.querySelector('#summary-drift-count')?.textContent?.trim() ?? '';
+    const driftItems = Array.from(
+      document.querySelectorAll('#summary-drift-list li')
+    ).map((item) => item.textContent ?? '');
+    const firstLog = document.querySelector('#logs .log-entry')?.textContent ?? '';
+
+    return { posture, fingerprint, driftCount, driftItems, firstLog };
+  });
+
+  assert.notEqual(uiState.posture, '-', 'Popup should render computed threat posture.');
+  assert.equal(uiState.fingerprint, '3', 'Popup should count fingerprint-linked adaptation signals.');
+  assert.equal(uiState.driftCount, '1', 'Popup should surface one drift alert for repeated pattern.');
+  assert.match(uiState.driftItems[0] ?? '', /tracker\.example/i, 'Drift alert should include domain context.');
+  assert.match(uiState.firstLog, /Possible fingerprint identifier/i, 'Recent activity should include adaptation signals.');
+}
+
 async function testVaultEncryption(extensionPage, context, url) {
   const plainValue = 'secret-session-value';
   await context.addCookies([{ name: 'session_id', value: plainValue, url }]);
@@ -210,6 +276,9 @@ async function run() {
   try {
     await testPopupSettingsRoundTrip(resources.extensionPage);
     console.log('PASS popup settings save and reload');
+
+    await testPopupIntelligenceVisibility(resources.extensionPage);
+    console.log('PASS popup intelligence and drift visibility');
 
     await testLocalOnlyGuard(resources.serviceWorker);
     console.log('PASS local-only guard blocks background network');

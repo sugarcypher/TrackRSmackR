@@ -1,9 +1,30 @@
+import type { PolicyDecision } from './PolicyEngine.js';
+import type { JarType } from '../workers/CookieJarWorker.js';
+
+export type AuditEventType = 'COOKIE_DECISION' | 'DECAY_EXECUTION';
+
+export type AuditOutcome =
+  | 'ALLOWED'
+  | 'ALLOWED_VAULTED'
+  | 'REMOVED'
+  | 'REMOVED_AND_QUARANTINED'
+  | 'DECAY_PENDING'
+  | 'DECAY_EXECUTED';
+
 export interface AuditEntry {
   timestamp: number;
   domain: string;
   name: string;
-  action: string;
+  action: PolicyDecision;
   reason: string;
+  eventType: AuditEventType;
+  policyReason?: string;
+  explanation?: string;
+  targetJar?: JarType | 'NONE';
+  adaptationSignals?: string[];
+  confidence?: number;
+  outcome?: AuditOutcome;
+  driftKey?: string;
 }
 
 export class AuditLog {

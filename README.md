@@ -11,6 +11,7 @@ TrackRSmackR is a Manifest V3 Chromium extension implementing a local-only cooki
 ## Manager + Workers
 
 - `src/core/BouncerCore.ts`: manager/orchestrator
+- `src/core/EventBus.ts`: local event envelope + message routing
 - `src/workers/CookieObserverWorker.ts`: cookie event intake
 - `src/workers/ClassifierWorker.ts`: policy evaluation bridge
 - `src/workers/CookieJarWorker.ts`: encrypted dual-jar store
@@ -25,6 +26,7 @@ TrackRSmackR is a Manifest V3 Chromium extension implementing a local-only cooki
 - Vault key persists locally in extension storage
 - Quarantine key is in-memory ephemeral
 - Background startup enables a local-only runtime guard that blocks `fetch`
+- Audit events include policy reason, adaptation signals, drift key, and enforcement outcome
 
 ## Build
 
@@ -41,6 +43,12 @@ npm test
 npm run smoke:extension
 npm run test:integration
 ```
+
+Popup now includes an Intelligence Snapshot with:
+
+- threat posture
+- fingerprint-signal pressure
+- drift alert summaries
 
 Load unpacked extension from:
 

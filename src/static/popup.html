@@ -5,7 +5,7 @@
     <title>TrackRSmackR</title>
     <style>
       body {
-        width: 300px;
+        width: 340px;
         font-family: sans-serif;
         padding: 10px;
       }
@@ -13,12 +13,6 @@
       h1 {
         font-size: 16px;
         color: #d9534f;
-      }
-
-      .log-entry {
-        font-size: 12px;
-        border-bottom: 1px solid #eee;
-        padding: 5px 0;
       }
 
       .section-title {
@@ -60,10 +54,78 @@
         font-size: 11px;
         color: #666;
       }
+
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+      }
+
+      .summary-card {
+        border: 1px solid #e7e7e7;
+        border-radius: 6px;
+        padding: 6px;
+        background: #fafafa;
+      }
+
+      .summary-label {
+        display: block;
+        font-size: 10px;
+        color: #666;
+        margin-bottom: 2px;
+      }
+
+      .summary-value {
+        display: block;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .summary-detail {
+        margin-top: 6px;
+        font-size: 11px;
+      }
+
+      .summary-list {
+        margin: 4px 0 0;
+        padding-left: 16px;
+      }
+
+      .summary-list li {
+        margin-bottom: 2px;
+      }
+
+      .log-entry {
+        font-size: 12px;
+        border-bottom: 1px solid #eee;
+        padding: 6px 0;
+      }
+
+      .log-title {
+        font-weight: 700;
+      }
+
+      .log-reason {
+        color: #444;
+        margin-top: 2px;
+      }
+
+      .log-signals {
+        color: #666;
+        font-size: 11px;
+        margin-top: 2px;
+      }
+
+      .log-meta {
+        color: #666;
+        font-size: 11px;
+        margin-top: 2px;
+      }
     </style>
   </head>
   <body>
     <h1>TrackRSmackR Active</h1>
+
     <div class="section-title">Policy Settings</div>
     <label for="policy-mode">Policy Mode</label>
     <select id="policy-mode">
@@ -78,8 +140,29 @@
     <button id="save-settings" type="button">Save Settings</button>
     <div id="settings-status"></div>
 
+    <div class="section-title">Intelligence Snapshot</div>
+    <div class="summary-grid">
+      <div class="summary-card">
+        <span class="summary-label">Threat Posture</span>
+        <span id="summary-posture" class="summary-value">-</span>
+      </div>
+      <div class="summary-card">
+        <span class="summary-label">Fingerprint Signals</span>
+        <span id="summary-fingerprint" class="summary-value">0</span>
+      </div>
+      <div class="summary-card">
+        <span class="summary-label">Adaptive Drift</span>
+        <span id="summary-drift-count" class="summary-value">0</span>
+      </div>
+    </div>
+    <div class="summary-detail">
+      <strong>Drift Alerts</strong>
+      <ul id="summary-drift-list" class="summary-list">
+        <li>No significant drift detected yet.</li>
+      </ul>
+    </div>
+
     <div class="section-title">Recent Activity</div>
-    <p>Recent Activity:</p>
     <div id="logs">Loading...</div>
     <script type="module" src="popup.js"></script>
   </body>
