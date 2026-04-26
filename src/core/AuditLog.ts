@@ -9,7 +9,9 @@ export type AuditOutcome =
   | 'REMOVED'
   | 'REMOVED_AND_QUARANTINED'
   | 'DECAY_PENDING'
-  | 'DECAY_EXECUTED';
+  | 'DECAY_EXECUTED'
+  | 'GINGERBREAD_SUBSTITUTED'
+  | 'SESSION_APPROVED';
 
 export interface AuditEntry {
   timestamp: number;
