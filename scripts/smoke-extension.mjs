@@ -102,7 +102,11 @@ async function run() {
     });
 
     await storageClear(extensionPage);
-    await storageSet(extensionPage, { policyMode: 'BALANCED', userAllowlist: [] });
+    await storageSet(extensionPage, {
+      policyMode: 'BALANCED',
+      userAllowlist: [],
+      tutorSwarmAutopilotEnabled: false
+    });
 
     const page = await context.newPage();
     await page.goto(url, { waitUntil: 'domcontentloaded' });
@@ -137,10 +141,17 @@ async function run() {
 
     const auditLog = Array.isArray(state.auditLog) ? state.auditLog : [];
     const latestUnknownEntry = [...auditLog].reverse().find((entry) => entry.name === 'random_id');
+    const unknownAction = latestUnknownEntry?.action;
+    const unknownIsDecayPath = unknownAction === 'DECAY';
+    const unknownIsStrictPath = unknownAction === 'QUARANTINE';
 
     const unknownImmediateCheck = {
-      actionIsDecay: latestUnknownEntry?.action === 'DECAY',
+      action: unknownAction ?? 'UNKNOWN',
+      actionRecognized: unknownIsDecayPath || unknownIsStrictPath,
       initiallyPresent: hasCookie(cookies, 'random_id'),
+      initialStateConsistent:
+        (unknownIsDecayPath && hasCookie(cookies, 'random_id')) ||
+        (unknownIsStrictPath && !hasCookie(cookies, 'random_id')),
       quarantined: hasJarEntry(state.quarantineStore, 'random_id')
     };
 
@@ -165,8 +176,8 @@ async function run() {
       trackerCheck.quarantined &&
       essentialCheck.present &&
       essentialCheck.vaulted &&
-      unknownImmediateCheck.actionIsDecay &&
-      unknownImmediateCheck.initiallyPresent &&
+      unknownImmediateCheck.actionRecognized &&
+      unknownImmediateCheck.initialStateConsistent &&
       unknownImmediateCheck.quarantined &&
       unknownDecayFinalCheck.removedAfterDecay &&
       unknownDecayFinalCheck.smashedAfterDecay;

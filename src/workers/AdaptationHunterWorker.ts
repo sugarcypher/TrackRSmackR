@@ -1,28 +1,8 @@
 export class AdaptationHunterWorker {
-  private uniformPersona = false;
-  private regenShield = false;
-
-  public async init(): Promise<void> {
-    const data = (await chrome.storage.local.get([
-      'uniformPersona',
-      'regenShield'
-    ])) as { uniformPersona?: unknown; regenShield?: unknown };
-
-    this.uniformPersona = data.uniformPersona === true;
-    this.regenShield = data.regenShield === true;
-  }
-
-  public isUniformPersonaEnabled(): boolean {
-    return this.uniformPersona;
-  }
-
-  public isRegenShieldEnabled(): boolean {
-    return this.regenShield;
-  }
-
   public inspect(cookie: chrome.cookies.Cookie): string[] {
     const findings: string[] = [];
     const lowerName = cookie.name.toLowerCase();
+    const lowerValue = cookie.value.toLowerCase();
 
     if (/[a-f0-9]{20,}/.test(cookie.value)) {
       findings.push('Long hex-like value');
@@ -36,14 +16,34 @@ export class AdaptationHunterWorker {
       findings.push('Deep subdomain usage');
     }
 
-    if (this.uniformPersona && (lowerName.includes('persona') || lowerName.includes('ua'))) {
-      findings.push('Uniform persona enforcement');
+    const fingerprintKeywords = [
+      'canvas',
+      'webgl',
+      'audiocontext',
+      'webrtc',
+      'device_memory',
+      'devicememory',
+      'hardware_concurrency',
+      'hardwareconcurrency',
+      'timezone',
+      'font',
+      'plugins',
+      'battery',
+      'speechvoices'
+    ];
+
+    if (fingerprintKeywords.some((keyword) => lowerName.includes(keyword) || lowerValue.includes(keyword))) {
+      findings.push('Fingerprint surface enumeration');
     }
 
-    if (this.regenShield && lowerName.includes('regen')) {
-      findings.push('Regeneration shield trigger');
+    if (/(?:[A-Za-z0-9+/]{24,}={0,2})/.test(cookie.value)) {
+      findings.push('High-entropy token payload');
     }
 
-    return findings;
+    if (/(?:visitor|device|client|browser)[-_]?id/.test(lowerName)) {
+      findings.push('Long-lived device identifier pattern');
+    }
+
+    return Array.from(new Set(findings));
   }
 }

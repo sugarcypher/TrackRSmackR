@@ -1,4 +1,9 @@
 node_modules/
 dist/
+dist copy/
+dist copy.zip
 .env
 .DS_Store
+.claude/
+trackrsmackr_1.0.1.zip
+src/static/onboarding 2.html

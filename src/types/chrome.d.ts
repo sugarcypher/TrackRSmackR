@@ -1,11 +1,29 @@
 declare namespace chrome {
   namespace storage {
+    interface StorageChange {
+      oldValue?: unknown;
+      newValue?: unknown;
+    }
+
+    interface StorageChangedEvent {
+      addListener(
+        callback: (changes: Record<string, StorageChange>, areaName: string) => void
+      ): void;
+    }
+
     namespace local {
       function get(
         keys?: string | string[] | Record<string, unknown> | null
       ): Promise<Record<string, unknown>>;
+      function get(
+        keys: string | string[] | Record<string, unknown> | null,
+        callback: (items: Record<string, unknown>) => void
+      ): void;
       function set(items: Record<string, unknown>): Promise<void>;
+      function set(items: Record<string, unknown>, callback: () => void): void;
     }
+
+    const onChanged: StorageChangedEvent;
   }
 
   namespace cookies {

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrackRSmackR — Privacy Policy</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    background: #0e1117;
+    color: #e6e8ef;
+    line-height: 1.7;
+  }
+  h1 { color: #4cc38a; font-size: 2em; margin-bottom: 4px; }
+  h2 { color: #4cc38a; margin-top: 40px; font-size: 1.2em; border-bottom: 1px solid #222633; padding-bottom: 8px; }
+  p, li { color: #c8ccd6; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 8px; }
+  .tagline { color: #8a909e; margin-bottom: 40px; font-style: italic; }
+  .updated { color: #8a909e; font-size: 0.9em; }
+  a { color: #4cc38a; }
+  .highlight { background: #161a22; border-left: 3px solid #4cc38a; padding: 16px 20px; border-radius: 4px; margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<h1>TrackRSmackR Privacy Policy</h1>
+<p class="tagline">Stop cookies. Block trackers. Reclaim your data.</p>
+<p class="updated">Last updated: March 2026</p>
+
+<div class="highlight">
+  <strong>The short version:</strong> TrackRSmackR processes everything locally on your device. We collect nothing. We store nothing on our servers. We have no servers. Your data never leaves your browser.
+</div>
+
+<h2>1. Who We Are</h2>
+<p>TrackRSmackR is a browser extension developed by Briar Morgan Greenway, an independent developer. Contact: <a href="mailto:privacy@trackrsmackr.com">privacy@trackrsmackr.com</a></p>
+
+<h2>2. What Data TrackRSmackR Accesses</h2>
+<p>TrackRSmackR accesses the following data solely to perform its privacy protection functions:</p>
+<ul>
+  <li><strong>Cookie data</strong> — TrackRSmackR reads, classifies, and manages cookies in your browser to identify and neutralize trackers.</li>
+  <li><strong>Browsing activity</strong> — Domain names of sites you visit are used to apply your configured policy rules (blocklist, allowlist, context rules). URLs are processed locally and immediately discarded.</li>
+  <li><strong>Extension storage</strong> — Your policy settings, allowlists, blocklists, and the encrypted Cookie Vault are stored locally in Chrome extension storage on your device.</li>
+</ul>
+
+<h2>3. What We Do NOT Collect</h2>
+<ul>
+  <li>We do not collect any personal information</li>
+  <li>We do not collect browsing history</li>
+  <li>We do not collect cookie contents or values</li>
+  <li>We do not collect usage statistics or analytics</li>
+  <li>We do not use telemetry of any kind</li>
+  <li>We do not transmit any data to any external server</li>
+  <li>We do not sell, share, or monetize any data</li>
+  <li>We do not have a database of users</li>
+  <li>We do not know who you are</li>
+</ul>
+
+<h2>4. Local-Only Architecture</h2>
+<p>TrackRSmackR is built on a strict local-only principle:</p>
+<ul>
+  <li><strong>All processing happens on your device.</strong> Cookie classification, policy enforcement, fingerprint detection, and audit logging occur entirely within your browser.</li>
+  <li><strong>The Cookie Vault is encrypted locally.</strong> Cookie values stored in the Vault are encrypted with AES-GCM using a key that lives only in your local extension storage.</li>
+  <li><strong>The Quarantine is ephemeral.</strong> The in-memory Quarantine key is destroyed when your browser session ends. Quarantined cookies do not persist.</li>
+  <li><strong>Audit logs are local.</strong> The Recent Activity log exists only in your browser and is never transmitted anywhere.</li>
+  <li><strong>No network calls.</strong> TrackRSmackR does not make any outbound network requests. There are no analytics endpoints, no update pings beyond Chrome's standard extension update mechanism, and no data collection infrastructure of any kind.</li>
+</ul>
+
+<h2>5. Permissions</h2>
+<p>TrackRSmackR requests the following Chrome permissions, used exclusively for privacy protection:</p>
+<ul>
+  <li><strong>cookies</strong> — to read, classify, and remove tracking cookies</li>
+  <li><strong>storage</strong> — to save your settings and encrypted Vault locally</li>
+  <li><strong>alarms</strong> — to run timed cookie decay cycles</li>
+  <li><strong>tabs / webNavigation</strong> — to apply context-aware policy rules based on the current domain</li>
+  <li><strong>declarativeNetRequest</strong> — to strip tracking cookies at the network level on flagged domains</li>
+</ul>
+<p>No permission is used for any purpose other than protecting your privacy.</p>
+
+<h2>6. Third Parties</h2>
+<p>TrackRSmackR does not integrate with, report to, or share data with any third party. There are no analytics SDKs, advertising networks, crash reporters, or external services embedded in the extension.</p>
+
+<h2>7. Children's Privacy</h2>
+<p>TrackRSmackR does not knowingly collect any information from anyone, including children under 13. Because we collect no data at all, there is no special handling required.</p>
+
+<h2>8. Changes to This Policy</h2>
+<p>If this policy changes materially, we will update the date at the top of this page and note the change in the extension's Chrome Web Store listing. Continued use of the extension after a policy update constitutes acceptance of the updated policy.</p>
+
+<h2>9. Contact</h2>
+<p>Questions about this privacy policy can be directed to:<br>
+<a href="mailto:privacy@trackrsmackr.com">privacy@trackrsmackr.com</a><br>
+<a href="https://trackrsmackr.com">trackrsmackr.com</a></p>
+
+<div class="highlight">
+  TrackRSmackR was built to protect your privacy. A privacy tool that compromises your privacy is not a privacy tool. We mean it.
+</div>
+
+</body>
+</html>

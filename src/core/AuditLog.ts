@@ -27,6 +27,11 @@ export interface AuditEntry {
   confidence?: number;
   outcome?: AuditOutcome;
   driftKey?: string;
+  deceptionTriggered?: boolean;
+  deceptionType?: string;
+  deceptionSignals?: string[];
+  deceptionRoute?: string;
+  deceptionConfidence?: number;
 }
 
 export class AuditLog {
