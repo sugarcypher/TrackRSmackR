@@ -1,29 +1,45 @@
 {
   "manifest_version": 3,
   "name": "TrackRSmackR - The Cookie Bouncer",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Autonomous privacy enforcement. Local-only by default.",
   "permissions": [
     "cookies",
     "storage",
     "alarms",
-    "scripting"
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess"
   ],
   "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "core/BackgroundService.js",
     "type": "module"
   },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content/UniformPersonaContent.js"
+      ],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "content/UniformPersonaMainWorld.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
   "action": {
     "default_popup": "static/popup.html"
   },
   "icons": {
     "48": "assets/icon48.png"
-  },
-  "web_accessible_resources": [
-    {
-      "resources": ["static/onboarding.html"],
-      "matches": ["<all_urls>"]
-    }
-  ]
+  }
 }

@@ -28,6 +28,7 @@
       }
 
       select,
+      input[type='number'],
       textarea,
       button {
         width: 100%;
@@ -38,6 +39,24 @@
       textarea {
         min-height: 64px;
         resize: vertical;
+      }
+
+      .inline-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 8px;
+        font-size: 12px;
+      }
+
+      .inline-checkbox input {
+        width: auto;
+      }
+
+      .hint {
+        margin-top: 4px;
+        color: #666;
+        font-size: 11px;
       }
 
       button {
@@ -57,7 +76,7 @@
 
       .summary-grid {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 6px;
       }
 
@@ -121,54 +140,6 @@
         font-size: 11px;
         margin-top: 2px;
       }
-
-      .log-actions {
-        margin-top: 4px;
-        display: flex;
-        gap: 6px;
-        align-items: center;
-        flex-wrap: wrap;
-      }
-
-      .trust-button {
-        font-size: 11px;
-        padding: 3px 8px;
-        background: #fff;
-        color: #1e6fc8;
-        border: 1px solid #1e6fc8;
-        border-radius: 3px;
-        cursor: pointer;
-        margin: 0;
-        width: auto;
-      }
-
-      .trust-button:hover {
-        background: #1e6fc8;
-        color: #fff;
-      }
-
-      .trust-always {
-        font-size: 11px;
-        padding: 3px 8px;
-        background: #fff;
-        color: #b8860b;
-        border: 1px solid #d4a017;
-        border-radius: 3px;
-        cursor: pointer;
-        margin: 0;
-        width: auto;
-      }
-
-      .trust-always:hover {
-        background: #d4a017;
-        color: #fff;
-      }
-
-      .trust-status {
-        font-size: 11px;
-        color: #22863a;
-        font-weight: 600;
-      }
     </style>
   </head>
   <body>
@@ -180,11 +151,61 @@
       <option value="BALANCED">Balanced (Decay unknown cookies)</option>
       <option value="STRICT">Strict (Quarantine unknown cookies)</option>
     </select>
+    <label class="inline-checkbox" for="tutor-swarm-autopilot-toggle">
+      <input id="tutor-swarm-autopilot-toggle" type="checkbox" />
+      Tutor Swarm Autopilot (policy auto-shift)
+    </label>
+    <label class="inline-checkbox" for="context-policy-toggle">
+      <input id="context-policy-toggle" type="checkbox" />
+      Context-aware policy profiles
+    </label>
+    <label class="inline-checkbox" for="context-breakage-toggle">
+      <input id="context-breakage-toggle" type="checkbox" />
+      Breakage budget adaptation
+    </label>
+    <label for="context-breakage-threshold">Breakage Relax Threshold</label>
+    <input id="context-breakage-threshold" type="number" min="2" max="20" step="1" />
+    <label for="context-rules-input">Context Rules (`domain=MODE`)</label>
+    <textarea
+      id="context-rules-input"
+      placeholder="*.bank.example=STRICT&#10;*.shop.example=BALANCED"
+    ></textarea>
+    <label for="policy-floor-mode">Policy Floor Mode</label>
+    <select id="policy-floor-mode">
+      <option value="BALANCED">Balanced floor</option>
+      <option value="STRICT">Strict floor</option>
+    </select>
+    <label for="policy-floor-blocklist">Invariant Domain Blocklist</label>
+    <textarea
+      id="policy-floor-blocklist"
+      placeholder="tracker.example&#10;ads.example"
+    ></textarea>
     <label for="allowlist-input">Allowlist Domains</label>
     <textarea
       id="allowlist-input"
       placeholder="example.com&#10;accounts.google.com"
     ></textarea>
+    <label class="inline-checkbox" for="uniform-persona-toggle">
+      <input id="uniform-persona-toggle" type="checkbox" />
+      Uniform Persona Mode (anti-fingerprinting)
+    </label>
+    <label class="inline-checkbox" for="entropy-normalization-toggle">
+      <input id="entropy-normalization-toggle" type="checkbox" />
+      Entropy normalization
+    </label>
+    <label class="inline-checkbox" for="script-blocklist-toggle">
+      <input id="script-blocklist-toggle" type="checkbox" />
+      Fingerprint script blocklist
+    </label>
+    <label class="inline-checkbox" for="anti-regeneration-toggle">
+      <input id="anti-regeneration-toggle" type="checkbox" />
+      Regenerative cookie shield
+    </label>
+    <label class="inline-checkbox" for="aggressive-strip-toggle">
+      <input id="aggressive-strip-toggle" type="checkbox" />
+      Aggressive Set-Cookie strip (flagged domains)
+    </label>
+    <div class="hint">Applies to new page loads. Reload tabs after changing.</div>
     <button id="save-settings" type="button">Save Settings</button>
     <div id="settings-status"></div>
 
@@ -203,14 +224,43 @@
         <span id="summary-drift-count" class="summary-value">0</span>
       </div>
       <div class="summary-card">
-        <span class="summary-label">Session Approved</span>
-        <span id="summary-session-approved" class="summary-value">0</span>
+        <span class="summary-label">Deception Probes</span>
+        <span id="summary-deception" class="summary-value">0</span>
+      </div>
+      <div class="summary-card">
+        <span class="summary-label">Pipeline P95 (ms)</span>
+        <span id="summary-latency" class="summary-value">-</span>
+      </div>
+      <div class="summary-card">
+        <span class="summary-label">Platform Readiness</span>
+        <span id="summary-readiness" class="summary-value">-</span>
+      </div>
+      <div class="summary-card">
+        <span class="summary-label">Tutor Swarm</span>
+        <span id="summary-swarm-signal" class="summary-value">-</span>
+      </div>
+      <div class="summary-card">
+        <span class="summary-label">Swarm Action</span>
+        <span id="summary-swarm-action" class="summary-value">-</span>
       </div>
     </div>
+    <div id="summary-swarm-detail" class="summary-detail">No swarm cycles yet.</div>
     <div class="summary-detail">
       <strong>Drift Alerts</strong>
       <ul id="summary-drift-list" class="summary-list">
         <li>No significant drift detected yet.</li>
+      </ul>
+    </div>
+    <div class="summary-detail">
+      <strong>Deception Routes</strong>
+      <ul id="summary-deception-list" class="summary-list">
+        <li>No deception probes trapped yet.</li>
+      </ul>
+    </div>
+    <div class="summary-detail">
+      <strong>Compatibility Warnings</strong>
+      <ul id="summary-compat-list" class="summary-list">
+        <li>No compatibility warnings.</li>
       </ul>
     </div>
 

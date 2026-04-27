@@ -1,29 +1,64 @@
-import { AuditLog, type AuditEntry, type AuditOutcome } from '../core/AuditLog.js';
+import { AuditLog, type AuditEntry } from '../core/AuditLog.js';
+import type {
+  BrowserCompatibilitySnapshot,
+  BrowserReadiness,
+  DriftAlert,
+  IntelligenceSummary,
+  PerformancePressure,
+  PerformanceSnapshot,
+  ThreatPosture,
+  TutorSwarmSnapshot
+} from '../core/IntelligenceTypes.js';
 
 type PopupSettings = {
   policyMode?: string;
   userAllowlist?: string[];
+  tutorSwarmAutopilotEnabled?: boolean;
+  contextPolicyEnabled?: boolean;
+  contextBreakageAdaptiveEnabled?: boolean;
+  contextBreakageRelaxThreshold?: number;
+  contextPolicyRules?: ContextPolicyRule[];
+  policyInvariantFloorMode?: string;
+  policyInvariantDomainBlocklist?: string[];
+  policyInvariantEnforcePersona?: boolean;
+  uniformPersonaEnabled?: boolean;
+  personaEntropyNormalizationEnabled?: boolean;
+  personaScriptBlocklistEnabled?: boolean;
+  antiRegenerationEnabled?: boolean;
+  aggressiveSetCookieStripEnabled?: boolean;
 };
 
-interface DriftAlert {
+interface ContextPolicyRule {
+  pattern: string;
+  mode: 'STRICT' | 'BALANCED';
+}
+
+interface DriftAlertUi {
   key: string;
   delta: number;
   recentCount: number;
 }
 
-interface IntelligenceSummary {
+interface FallbackSummary {
   posture: 'Stable' | 'Guarded' | 'Elevated';
   fingerprintSignals: number;
-  driftAlerts: DriftAlert[];
+  driftAlerts: DriftAlertUi[];
+  deceptionProbes: number;
+  deceptionRoutes: string[];
+  p95LatencyMs: number | null;
+  pressure: 'Normal' | 'Elevated' | 'Critical' | '-';
+  readiness: 'Ready' | 'Partial' | 'Risk' | '-';
+  compatibilityWarnings: string[];
+  swarmSignal: string;
+  swarmAction: string;
+  swarmDetail: string;
 }
 
-interface SessionApprovedResponse {
-  ok?: boolean;
-  sessionApprovedCount?: number;
-  error?: string;
-}
-
-const sessionApprovedOverrides = new Map<number, AuditOutcome>();
+type StoredData = {
+  intelligenceSummary?: IntelligenceSummary;
+  performanceSnapshot?: PerformanceSnapshot;
+  browserCompatibility?: BrowserCompatibilitySnapshot;
+};
 
 function normalizeAllowlist(raw: string): string[] {
   const values = raw
@@ -33,17 +68,53 @@ function normalizeAllowlist(raw: string): string[] {
   return Array.from(new Set(values));
 }
 
+function parseContextRules(raw: string): ContextPolicyRule[] {
+  const rules: ContextPolicyRule[] = [];
+  const lines = raw
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+  for (const line of lines) {
+    const [patternRaw, modeRaw] = line.split('=').map((value) => value.trim());
+    if (!patternRaw || !modeRaw) {
+      continue;
+    }
+
+    const mode = modeRaw.toUpperCase();
+    if (mode !== 'STRICT' && mode !== 'BALANCED') {
+      continue;
+    }
+
+    rules.push({
+      pattern: patternRaw.toLowerCase(),
+      mode
+    });
+  }
+
+  return rules;
+}
+
+function formatContextRules(rules: ContextPolicyRule[]): string {
+  return rules.map((rule) => `${rule.pattern}=${rule.mode}`).join('\n');
+}
+
+function normalizeBreakageThreshold(raw: unknown): number {
+  if (typeof raw !== 'number' || Number.isNaN(raw)) {
+    return 4;
+  }
+
+  const rounded = Math.round(raw);
+  return Math.min(Math.max(rounded, 2), 20);
+}
+
 function escapeHtml(text: string): string {
   return text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/\"/g, '&quot;')
+    .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
-}
-
-function escapeAttr(text: string): string {
-  return escapeHtml(text);
 }
 
 function makeDriftKey(entry: AuditEntry): string {
@@ -68,21 +139,91 @@ function countByDriftKey(entries: AuditEntry[]): Map<string, number> {
   return counts;
 }
 
-function formatDriftAlert(alert: DriftAlert): string {
+function formatDriftAlert(alert: DriftAlertUi): string {
   const [domain, action, signalKey] = alert.key.split('|');
   const signalLabel = signalKey && signalKey !== 'none' ? `signals: ${signalKey}` : 'signals: none';
 
   return `${domain} · ${action} · ${signalLabel} (+${alert.delta}, ${alert.recentCount} recent)`;
 }
 
-function buildIntelligenceSummary(history: AuditEntry[]): IntelligenceSummary {
+function mapPosture(posture: ThreatPosture): 'Stable' | 'Guarded' | 'Elevated' {
+  if (posture === 'ELEVATED') {
+    return 'Elevated';
+  }
+
+  if (posture === 'GUARDED') {
+    return 'Guarded';
+  }
+
+  return 'Stable';
+}
+
+function mapPressure(pressure: PerformancePressure): 'Normal' | 'Elevated' | 'Critical' {
+  if (pressure === 'CRITICAL') {
+    return 'Critical';
+  }
+
+  if (pressure === 'ELEVATED') {
+    return 'Elevated';
+  }
+
+  return 'Normal';
+}
+
+function mapReadiness(readiness: BrowserReadiness): 'Ready' | 'Partial' | 'Risk' {
+  if (readiness === 'READY') {
+    return 'Ready';
+  }
+
+  if (readiness === 'PARTIAL') {
+    return 'Partial';
+  }
+
+  return 'Risk';
+}
+
+function normalizeStoredSummary(summary: IntelligenceSummary): FallbackSummary {
+  const driftAlerts: DriftAlertUi[] = (summary.topDriftAlerts ?? []).map((alert: DriftAlert) => ({
+    key: alert.key,
+    delta: alert.delta,
+    recentCount: alert.recentCount
+  }));
+  const swarm = summary.tutorSwarm;
+  const swarmDetail = buildSwarmDetail(swarm);
+
+  return {
+    posture: mapPosture(summary.posture),
+    fingerprintSignals: summary.fingerprintSignals,
+    driftAlerts,
+    deceptionProbes: summary.deceptionProbes ?? 0,
+    deceptionRoutes: summary.deceptionRouteHotspots ?? [],
+    p95LatencyMs:
+      summary.performance && typeof summary.performance.p95TotalMs === 'number'
+        ? summary.performance.p95TotalMs
+        : null,
+    pressure:
+      summary.performance && summary.performance.pressure
+        ? mapPressure(summary.performance.pressure)
+        : '-',
+    readiness:
+      summary.browserCompatibility && summary.browserCompatibility.readiness
+        ? mapReadiness(summary.browserCompatibility.readiness)
+        : '-',
+    compatibilityWarnings: summary.browserCompatibility?.warnings ?? [],
+    swarmSignal: swarm?.signal ?? '-',
+    swarmAction: swarm?.interventionAction ?? '-',
+    swarmDetail
+  };
+}
+
+function buildFallbackSummary(history: AuditEntry[]): FallbackSummary {
   const recentWindow = history.slice(-80);
   const baselineWindow = history.slice(Math.max(0, history.length - 160), Math.max(0, history.length - 80));
 
   const recentCounts = countByDriftKey(recentWindow);
   const baselineCounts = countByDriftKey(baselineWindow);
 
-  const driftAlerts: DriftAlert[] = [];
+  const driftAlerts: DriftAlertUi[] = [];
   for (const [key, recentCount] of recentCounts.entries()) {
     const baselineCount = baselineCounts.get(key) ?? 0;
     const delta = recentCount - baselineCount;
@@ -101,23 +242,81 @@ function buildIntelligenceSummary(history: AuditEntry[]): IntelligenceSummary {
   const severeActions = recentWindow.filter(
     (entry) => entry.action === 'QUARANTINE' || entry.action === 'BLOCK'
   ).length;
+  const deceptionEntries = recentWindow.filter((entry) => entry.deceptionTriggered === true);
+  const routeCounts = new Map<string, number>();
+  for (const entry of deceptionEntries) {
+    if (!entry.deceptionRoute) {
+      continue;
+    }
+    routeCounts.set(entry.deceptionRoute, (routeCounts.get(entry.deceptionRoute) ?? 0) + 1);
+  }
+  const deceptionRoutes = [...routeCounts.entries()]
+    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+    .slice(0, 5)
+    .map(([route]) => route);
 
-  const postureScore = severeActions + driftAlerts.length * 2 + fingerprintSignals * 2;
-  const posture: IntelligenceSummary['posture'] =
+  const postureScore =
+    severeActions + driftAlerts.length * 2 + fingerprintSignals * 2 + deceptionEntries.length * 3;
+  const posture: FallbackSummary['posture'] =
     postureScore >= 12 ? 'Elevated' : postureScore >= 5 ? 'Guarded' : 'Stable';
 
   return {
     posture,
     fingerprintSignals,
-    driftAlerts: driftAlerts.slice(0, 5)
+    driftAlerts: driftAlerts.slice(0, 5),
+    deceptionProbes: deceptionEntries.length,
+    deceptionRoutes,
+    p95LatencyMs: null,
+    pressure: '-',
+    readiness: '-',
+    compatibilityWarnings: [],
+    swarmSignal: '-',
+    swarmAction: '-',
+    swarmDetail: 'No swarm cycles yet.'
   };
+}
+
+function buildSwarmDetail(swarm?: TutorSwarmSnapshot): string {
+  if (!swarm) {
+    return 'No swarm cycles yet.';
+  }
+
+  return `${swarm.complianceMessage} · ${swarm.diagnosis} · val slope ${swarm.slopeVal.toFixed(3)}`;
 }
 
 async function loadSettings(
   policySelect: HTMLSelectElement,
-  allowlistInput: HTMLTextAreaElement
+  tutorSwarmAutopilotToggle: HTMLInputElement,
+  contextPolicyToggle: HTMLInputElement,
+  contextBreakageToggle: HTMLInputElement,
+  contextBreakageThresholdInput: HTMLInputElement,
+  contextRulesInput: HTMLTextAreaElement,
+  policyFloorModeSelect: HTMLSelectElement,
+  policyFloorBlocklistInput: HTMLTextAreaElement,
+  allowlistInput: HTMLTextAreaElement,
+  uniformPersonaToggle: HTMLInputElement,
+  entropyNormalizationToggle: HTMLInputElement,
+  scriptBlocklistToggle: HTMLInputElement,
+  antiRegenerationToggle: HTMLInputElement,
+  aggressiveStripToggle: HTMLInputElement
 ): Promise<void> {
-  const data = (await chrome.storage.local.get(['policyMode', 'userAllowlist'])) as PopupSettings;
+  const data = (await chrome.storage.local.get([
+    'policyMode',
+    'userAllowlist',
+    'tutorSwarmAutopilotEnabled',
+    'contextPolicyEnabled',
+    'contextBreakageAdaptiveEnabled',
+    'contextBreakageRelaxThreshold',
+    'contextPolicyRules',
+    'policyInvariantFloorMode',
+    'policyInvariantDomainBlocklist',
+    'policyInvariantEnforcePersona',
+    'uniformPersonaEnabled',
+    'personaEntropyNormalizationEnabled',
+    'personaScriptBlocklistEnabled',
+    'antiRegenerationEnabled',
+    'aggressiveSetCookieStripEnabled'
+  ])) as PopupSettings;
 
   if (data.policyMode === 'STRICT' || data.policyMode === 'BALANCED') {
     policySelect.value = data.policyMode;
@@ -126,94 +325,191 @@ async function loadSettings(
   }
 
   const allowlist = Array.isArray(data.userAllowlist) ? data.userAllowlist : [];
+  tutorSwarmAutopilotToggle.checked = data.tutorSwarmAutopilotEnabled !== false;
+  contextPolicyToggle.checked = data.contextPolicyEnabled !== false;
+  contextBreakageToggle.checked = data.contextBreakageAdaptiveEnabled !== false;
+  contextBreakageThresholdInput.value = String(normalizeBreakageThreshold(data.contextBreakageRelaxThreshold));
+  contextRulesInput.value = Array.isArray(data.contextPolicyRules)
+    ? formatContextRules(data.contextPolicyRules)
+    : '';
+  policyFloorModeSelect.value =
+    data.policyInvariantFloorMode === 'STRICT' || data.policyInvariantFloorMode === 'BALANCED'
+      ? data.policyInvariantFloorMode
+      : 'BALANCED';
+  policyFloorBlocklistInput.value = Array.isArray(data.policyInvariantDomainBlocklist)
+    ? Array.from(
+        new Set(
+          data.policyInvariantDomainBlocklist
+            .filter((domain) => typeof domain === 'string')
+            .map((domain) => domain.trim().toLowerCase())
+            .filter((domain) => domain.length > 0)
+        )
+      ).join('\n')
+    : '';
   allowlistInput.value = allowlist.join('\n');
+  uniformPersonaToggle.checked = data.uniformPersonaEnabled !== false;
+  entropyNormalizationToggle.checked = data.personaEntropyNormalizationEnabled !== false;
+  scriptBlocklistToggle.checked = data.personaScriptBlocklistEnabled !== false;
+  antiRegenerationToggle.checked = data.antiRegenerationEnabled !== false;
+  aggressiveStripToggle.checked = data.aggressiveSetCookieStripEnabled !== false;
 }
 
 async function saveSettings(
   policySelect: HTMLSelectElement,
+  tutorSwarmAutopilotToggle: HTMLInputElement,
+  contextPolicyToggle: HTMLInputElement,
+  contextBreakageToggle: HTMLInputElement,
+  contextBreakageThresholdInput: HTMLInputElement,
+  contextRulesInput: HTMLTextAreaElement,
+  policyFloorModeSelect: HTMLSelectElement,
+  policyFloorBlocklistInput: HTMLTextAreaElement,
   allowlistInput: HTMLTextAreaElement,
+  uniformPersonaToggle: HTMLInputElement,
+  entropyNormalizationToggle: HTMLInputElement,
+  scriptBlocklistToggle: HTMLInputElement,
+  antiRegenerationToggle: HTMLInputElement,
+  aggressiveStripToggle: HTMLInputElement,
   statusDiv: HTMLElement
 ): Promise<void> {
   const policyMode = policySelect.value === 'STRICT' ? 'STRICT' : 'BALANCED';
   const userAllowlist = normalizeAllowlist(allowlistInput.value);
+  const tutorSwarmAutopilotEnabled = tutorSwarmAutopilotToggle.checked;
+  const contextPolicyEnabled = contextPolicyToggle.checked;
+  const contextBreakageAdaptiveEnabled = contextBreakageToggle.checked;
+  const contextBreakageRelaxThreshold = normalizeBreakageThreshold(
+    Number(contextBreakageThresholdInput.value)
+  );
+  const contextPolicyRules = parseContextRules(contextRulesInput.value);
+  const policyInvariantFloorMode =
+    policyFloorModeSelect.value === 'STRICT' ? 'STRICT' : 'BALANCED';
+  const policyInvariantDomainBlocklist = normalizeAllowlist(policyFloorBlocklistInput.value);
+  const uniformPersonaEnabled = uniformPersonaToggle.checked;
+  const personaEntropyNormalizationEnabled = entropyNormalizationToggle.checked;
+  const personaScriptBlocklistEnabled = scriptBlocklistToggle.checked;
+  const antiRegenerationEnabled = antiRegenerationToggle.checked;
+  const aggressiveSetCookieStripEnabled = aggressiveStripToggle.checked;
 
-  await chrome.storage.local.set({ policyMode, userAllowlist });
-  statusDiv.innerText = `Saved ${new Date().toLocaleTimeString()}`;
+  await chrome.storage.local.set({
+    policyMode,
+    userAllowlist,
+    tutorSwarmAutopilotEnabled,
+    contextPolicyEnabled,
+    contextBreakageAdaptiveEnabled,
+    contextBreakageRelaxThreshold,
+    contextPolicyRules,
+    policyInvariantFloorMode,
+    policyInvariantDomainBlocklist,
+    policyInvariantEnforcePersona: true,
+    uniformPersonaEnabled,
+    personaEntropyNormalizationEnabled,
+    personaScriptBlocklistEnabled,
+    antiRegenerationEnabled,
+    aggressiveSetCookieStripEnabled
+  });
+  statusDiv.innerText =
+    `Saved ${new Date().toLocaleTimeString()} (autopilot + regeneration apply immediately; reload tabs for persona toggles)`;
 }
 
-function renderSummary(history: AuditEntry[]): void {
+async function loadIntelligenceSummary(history: AuditEntry[]): Promise<FallbackSummary> {
+  const stored = (await chrome.storage.local.get([
+    'intelligenceSummary',
+    'performanceSnapshot',
+    'browserCompatibility'
+  ])) as StoredData;
+  const summary = stored.intelligenceSummary;
+  const storedPerformance = stored.performanceSnapshot;
+  const storedCompatibility = stored.browserCompatibility;
+  let result: FallbackSummary;
+
+  if (summary && summary.source === 'engine' && typeof summary.updatedAt === 'number') {
+    result = normalizeStoredSummary(summary);
+  } else {
+    result = buildFallbackSummary(history);
+  }
+
+  if (result.p95LatencyMs === null && storedPerformance && typeof storedPerformance.p95TotalMs === 'number') {
+    result.p95LatencyMs = storedPerformance.p95TotalMs;
+  }
+
+  if (result.pressure === '-' && storedPerformance?.pressure) {
+    result.pressure = mapPressure(storedPerformance.pressure);
+  }
+
+  if (result.readiness === '-' && storedCompatibility?.readiness) {
+    result.readiness = mapReadiness(storedCompatibility.readiness);
+  }
+
+  if (result.compatibilityWarnings.length === 0 && Array.isArray(storedCompatibility?.warnings)) {
+    result.compatibilityWarnings = storedCompatibility.warnings;
+  }
+
+  return result;
+}
+
+function renderSummary(summary: FallbackSummary): void {
   const postureEl = document.getElementById('summary-posture');
   const fingerprintEl = document.getElementById('summary-fingerprint');
   const driftCountEl = document.getElementById('summary-drift-count');
+  const deceptionEl = document.getElementById('summary-deception');
+  const latencyEl = document.getElementById('summary-latency');
+  const readinessEl = document.getElementById('summary-readiness');
+  const swarmSignalEl = document.getElementById('summary-swarm-signal');
+  const swarmActionEl = document.getElementById('summary-swarm-action');
+  const swarmDetailEl = document.getElementById('summary-swarm-detail');
   const driftListEl = document.getElementById('summary-drift-list');
+  const deceptionListEl = document.getElementById('summary-deception-list');
+  const compatibilityListEl = document.getElementById('summary-compat-list');
 
   if (
     !(postureEl instanceof HTMLElement) ||
     !(fingerprintEl instanceof HTMLElement) ||
     !(driftCountEl instanceof HTMLElement) ||
-    !(driftListEl instanceof HTMLElement)
+    !(deceptionEl instanceof HTMLElement) ||
+    !(latencyEl instanceof HTMLElement) ||
+    !(readinessEl instanceof HTMLElement) ||
+    !(swarmSignalEl instanceof HTMLElement) ||
+    !(swarmActionEl instanceof HTMLElement) ||
+    !(swarmDetailEl instanceof HTMLElement) ||
+    !(driftListEl instanceof HTMLElement) ||
+    !(deceptionListEl instanceof HTMLElement) ||
+    !(compatibilityListEl instanceof HTMLElement)
   ) {
     return;
   }
 
-  const summary = buildIntelligenceSummary(history);
-
   postureEl.innerText = summary.posture;
   fingerprintEl.innerText = String(summary.fingerprintSignals);
   driftCountEl.innerText = String(summary.driftAlerts.length);
+  deceptionEl.innerText = String(summary.deceptionProbes);
+  latencyEl.innerText = summary.p95LatencyMs === null ? '-' : String(summary.p95LatencyMs);
+  readinessEl.innerText = summary.readiness === '-' ? '-' : `${summary.readiness} · ${summary.pressure}`;
+  swarmSignalEl.innerText = summary.swarmSignal;
+  swarmActionEl.innerText = summary.swarmAction;
+  swarmDetailEl.innerText = summary.swarmDetail;
 
   if (summary.driftAlerts.length === 0) {
     driftListEl.innerHTML = '<li>No significant drift detected yet.</li>';
-    return;
+  } else {
+    driftListEl.innerHTML = summary.driftAlerts
+      .map((alert) => `<li>${escapeHtml(formatDriftAlert(alert))}</li>`)
+      .join('');
   }
 
-  driftListEl.innerHTML = summary.driftAlerts
-    .map((alert) => `<li>${escapeHtml(formatDriftAlert(alert))}</li>`)
-    .join('');
-}
-
-function renderSessionApprovedCount(count: number): void {
-  const sessionApprovedEl = document.getElementById('summary-session-approved');
-  if (sessionApprovedEl instanceof HTMLElement) {
-    sessionApprovedEl.innerText = String(count);
+  if (summary.deceptionRoutes.length === 0) {
+    deceptionListEl.innerHTML = '<li>No deception probes trapped yet.</li>';
+  } else {
+    deceptionListEl.innerHTML = summary.deceptionRoutes
+      .map((route) => `<li>${escapeHtml(route)}</li>`)
+      .join('');
   }
-}
 
-function buildEntryHtml(entry: AuditEntry, index: number): string {
-  const reason = entry.policyReason ?? entry.reason;
-  const explanation = entry.explanation && entry.explanation !== entry.reason ? entry.explanation : '';
-  const signals = entry.adaptationSignals ?? [];
-  const signalText =
-    signals.length > 0 ? `<div class="log-signals">Signals: ${escapeHtml(signals.join(', '))}</div>` : '';
-
-  const displayedOutcome: AuditOutcome | undefined =
-    sessionApprovedOverrides.get(index) ?? entry.outcome;
-  const outcomeHtml = displayedOutcome
-    ? `<div class="log-meta" data-role="outcome">Outcome: ${escapeHtml(displayedOutcome)}</div>`
-    : '';
-
-  const isTrustable =
-    (entry.action === 'QUARANTINE' || entry.action === 'DECAY') &&
-    displayedOutcome !== 'SESSION_APPROVED';
-
-  const trustControls = isTrustable
-    ? `<div class="log-actions" data-role="actions">
-        <button type="button" class="trust-button" data-domain="${escapeAttr(entry.domain)}" data-permanent="false">Trust this site</button>
-        <button type="button" class="trust-always" data-domain="${escapeAttr(entry.domain)}" data-permanent="true" title="Add to permanent allowlist">Always trust</button>
-      </div>`
-    : displayedOutcome === 'SESSION_APPROVED'
-      ? `<div class="log-actions"><span class="trust-status">✓ Session approved</span></div>`
-      : '';
-
-  return `<div class="log-entry" data-entry-index="${index}">
-      <div class="log-title">${escapeHtml(entry.action)} · ${escapeHtml(entry.name)}</div>
-      <div class="log-meta">${escapeHtml(entry.domain)} · ${new Date(entry.timestamp).toLocaleTimeString()}</div>
-      <div class="log-reason">${escapeHtml(reason)}</div>
-      ${explanation ? `<div class="log-reason">${escapeHtml(explanation)}</div>` : ''}
-      ${signalText}
-      ${outcomeHtml}
-      ${trustControls}
-    </div>`;
+  if (summary.compatibilityWarnings.length === 0) {
+    compatibilityListEl.innerHTML = '<li>No compatibility warnings.</li>';
+  } else {
+    compatibilityListEl.innerHTML = summary.compatibilityWarnings
+      .map((warning) => `<li>${escapeHtml(warning)}</li>`)
+      .join('');
+  }
 }
 
 function renderHistory(logDiv: HTMLElement, history: AuditEntry[]): void {
@@ -224,122 +520,46 @@ function renderHistory(logDiv: HTMLElement, history: AuditEntry[]): void {
 
   const recentEntries = history.slice(-12).reverse();
   logDiv.innerHTML = recentEntries
-    .map((entry, idx) => buildEntryHtml(entry, idx))
+    .map((entry) => {
+      const reason = entry.policyReason ?? entry.reason;
+      const explanation = entry.explanation && entry.explanation !== entry.reason ? entry.explanation : '';
+      const signals = entry.adaptationSignals ?? [];
+      const signalText =
+        signals.length > 0 ? `<div class="log-signals">Signals: ${escapeHtml(signals.join(', '))}</div>` : '';
+      const deceptionText =
+        entry.deceptionTriggered && entry.deceptionRoute
+          ? `<div class="log-meta">Deception Route: ${escapeHtml(entry.deceptionRoute)}</div>`
+          : '';
+
+      return `<div class="log-entry">
+          <div class="log-title">${escapeHtml(entry.action)} · ${escapeHtml(entry.name)}</div>
+          <div class="log-meta">${escapeHtml(entry.domain)} · ${new Date(entry.timestamp).toLocaleTimeString()}</div>
+          <div class="log-reason">${escapeHtml(reason)}</div>
+          ${explanation ? `<div class="log-reason">${escapeHtml(explanation)}</div>` : ''}
+          ${signalText}
+          ${deceptionText}
+          ${entry.outcome ? `<div class="log-meta">Outcome: ${escapeHtml(entry.outcome)}</div>` : ''}
+        </div>`;
+    })
     .join('');
-}
-
-async function dispatchSessionApprove(
-  domain: string,
-  permanent: boolean
-): Promise<SessionApprovedResponse> {
-  if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.sendMessage) {
-    return { ok: false, error: 'chrome.runtime unavailable' };
-  }
-
-  try {
-    const response = (await chrome.runtime.sendMessage({
-      type: 'SESSION_APPROVE_DOMAIN',
-      payload: { domain, permanent }
-    })) as SessionApprovedResponse;
-
-    return response ?? { ok: false };
-  } catch (error) {
-    return { ok: false, error: String(error) };
-  }
-}
-
-async function fetchSessionApprovedCount(): Promise<number> {
-  if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.sendMessage) {
-    return 0;
-  }
-
-  try {
-    const response = (await chrome.runtime.sendMessage({
-      type: 'GET_SESSION_APPROVED_COUNT'
-    })) as SessionApprovedResponse;
-
-    return typeof response?.sessionApprovedCount === 'number' ? response.sessionApprovedCount : 0;
-  } catch {
-    return 0;
-  }
-}
-
-function applySessionApprovedToEntry(
-  entryDiv: HTMLElement,
-  index: number
-): void {
-  sessionApprovedOverrides.set(index, 'SESSION_APPROVED');
-
-  const outcomeEl = entryDiv.querySelector('[data-role="outcome"]');
-  if (outcomeEl instanceof HTMLElement) {
-    outcomeEl.textContent = 'Outcome: SESSION_APPROVED';
-  } else {
-    const newOutcome = document.createElement('div');
-    newOutcome.className = 'log-meta';
-    newOutcome.setAttribute('data-role', 'outcome');
-    newOutcome.textContent = 'Outcome: SESSION_APPROVED';
-    entryDiv.appendChild(newOutcome);
-  }
-
-  const actionsEl = entryDiv.querySelector('[data-role="actions"]');
-  if (actionsEl instanceof HTMLElement) {
-    actionsEl.innerHTML = '<span class="trust-status">✓ Session approved</span>';
-    actionsEl.removeAttribute('data-role');
-  }
-}
-
-function attachTrustHandlers(logDiv: HTMLElement): void {
-  logDiv.addEventListener('click', async (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLElement)) {
-      return;
-    }
-
-    if (!target.classList.contains('trust-button') && !target.classList.contains('trust-always')) {
-      return;
-    }
-
-    const domain = target.getAttribute('data-domain') ?? '';
-    const permanent = target.getAttribute('data-permanent') === 'true';
-    const entryDiv = target.closest('.log-entry');
-
-    if (!domain || !(entryDiv instanceof HTMLElement)) {
-      return;
-    }
-
-    const indexAttr = entryDiv.getAttribute('data-entry-index');
-    const entryIndex = indexAttr ? Number.parseInt(indexAttr, 10) : -1;
-
-    if (Number.isNaN(entryIndex) || entryIndex < 0) {
-      return;
-    }
-
-    target.setAttribute('disabled', 'true');
-
-    const response = await dispatchSessionApprove(domain, permanent);
-
-    if (!response.ok) {
-      target.removeAttribute('disabled');
-      console.error('Session approval failed', response.error);
-      return;
-    }
-
-    applySessionApprovedToEntry(entryDiv, entryIndex);
-
-    const sessionApprovedEl = document.getElementById('summary-session-approved');
-    if (
-      sessionApprovedEl instanceof HTMLElement &&
-      typeof response.sessionApprovedCount === 'number'
-    ) {
-      sessionApprovedEl.innerText = String(response.sessionApprovedCount);
-    }
-  });
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
   const logDiv = document.getElementById('logs');
   const policySelect = document.getElementById('policy-mode');
+  const tutorSwarmAutopilotToggle = document.getElementById('tutor-swarm-autopilot-toggle');
+  const contextPolicyToggle = document.getElementById('context-policy-toggle');
+  const contextBreakageToggle = document.getElementById('context-breakage-toggle');
+  const contextBreakageThresholdInput = document.getElementById('context-breakage-threshold');
+  const contextRulesInput = document.getElementById('context-rules-input');
+  const policyFloorModeSelect = document.getElementById('policy-floor-mode');
+  const policyFloorBlocklistInput = document.getElementById('policy-floor-blocklist');
   const allowlistInput = document.getElementById('allowlist-input');
+  const uniformPersonaToggle = document.getElementById('uniform-persona-toggle');
+  const entropyNormalizationToggle = document.getElementById('entropy-normalization-toggle');
+  const scriptBlocklistToggle = document.getElementById('script-blocklist-toggle');
+  const antiRegenerationToggle = document.getElementById('anti-regeneration-toggle');
+  const aggressiveStripToggle = document.getElementById('aggressive-strip-toggle');
   const saveButton = document.getElementById('save-settings');
   const settingsStatus = document.getElementById('settings-status');
   const audit = new AuditLog();
@@ -348,26 +568,67 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (
     !(logDiv instanceof HTMLElement) ||
     !(policySelect instanceof HTMLSelectElement) ||
+    !(tutorSwarmAutopilotToggle instanceof HTMLInputElement) ||
+    !(contextPolicyToggle instanceof HTMLInputElement) ||
+    !(contextBreakageToggle instanceof HTMLInputElement) ||
+    !(contextBreakageThresholdInput instanceof HTMLInputElement) ||
+    !(contextRulesInput instanceof HTMLTextAreaElement) ||
+    !(policyFloorModeSelect instanceof HTMLSelectElement) ||
+    !(policyFloorBlocklistInput instanceof HTMLTextAreaElement) ||
     !(allowlistInput instanceof HTMLTextAreaElement) ||
+    !(uniformPersonaToggle instanceof HTMLInputElement) ||
+    !(entropyNormalizationToggle instanceof HTMLInputElement) ||
+    !(scriptBlocklistToggle instanceof HTMLInputElement) ||
+    !(antiRegenerationToggle instanceof HTMLInputElement) ||
+    !(aggressiveStripToggle instanceof HTMLInputElement) ||
     !(saveButton instanceof HTMLButtonElement) ||
     !(settingsStatus instanceof HTMLElement)
   ) {
     return;
   }
 
-  await loadSettings(policySelect, allowlistInput);
+  await loadSettings(
+    policySelect,
+    tutorSwarmAutopilotToggle,
+    contextPolicyToggle,
+    contextBreakageToggle,
+    contextBreakageThresholdInput,
+    contextRulesInput,
+    policyFloorModeSelect,
+    policyFloorBlocklistInput,
+    allowlistInput,
+    uniformPersonaToggle,
+    entropyNormalizationToggle,
+    scriptBlocklistToggle,
+    antiRegenerationToggle,
+    aggressiveStripToggle
+  );
   saveButton.addEventListener('click', async () => {
     try {
-      await saveSettings(policySelect, allowlistInput, settingsStatus);
+      await saveSettings(
+        policySelect,
+        tutorSwarmAutopilotToggle,
+        contextPolicyToggle,
+        contextBreakageToggle,
+        contextBreakageThresholdInput,
+        contextRulesInput,
+        policyFloorModeSelect,
+        policyFloorBlocklistInput,
+        allowlistInput,
+        uniformPersonaToggle,
+        entropyNormalizationToggle,
+        scriptBlocklistToggle,
+        antiRegenerationToggle,
+        aggressiveStripToggle,
+        settingsStatus
+      );
     } catch (error) {
       console.error('Failed to save settings', error);
       settingsStatus.innerText = 'Failed to save settings.';
     }
   });
 
-  renderSummary(history);
+  const summary = await loadIntelligenceSummary(history);
+  renderSummary(summary);
   renderHistory(logDiv, history);
-  attachTrustHandlers(logDiv);
-
-  void fetchSessionApprovedCount().then((count) => renderSessionApprovedCount(count));
 });

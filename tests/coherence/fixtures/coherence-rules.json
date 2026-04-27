@@ -1,0 +1,158 @@
+{
+  "name": "labcoat-win-chromium-120",
+  "thresholds": {
+    "maxContradictions": 0,
+    "minCoherenceScore": 0.95
+  },
+  "rules": [
+    {
+      "id": "navigator.platform",
+      "type": "equals",
+      "path": "navigator.platform",
+      "value": "Win32",
+      "message": "navigator.platform must stay pinned to Win32 persona."
+    },
+    {
+      "id": "navigator.language",
+      "type": "equals",
+      "path": "navigator.language",
+      "value": "en-US",
+      "message": "navigator.language must stay pinned to en-US."
+    },
+    {
+      "id": "navigator.languages",
+      "type": "arrayEquals",
+      "path": "navigator.languages",
+      "value": ["en-US", "en"],
+      "message": "navigator.languages must match the persona profile."
+    },
+    {
+      "id": "navigator.hardwareConcurrency",
+      "type": "numberEquals",
+      "path": "navigator.hardwareConcurrency",
+      "value": 4,
+      "message": "hardwareConcurrency drifted from persona profile."
+    },
+    {
+      "id": "navigator.deviceMemory",
+      "type": "numberEquals",
+      "path": "navigator.deviceMemory",
+      "value": 8,
+      "message": "deviceMemory drifted from persona profile."
+    },
+    {
+      "id": "intl.timeZone",
+      "type": "equals",
+      "path": "intl.timeZone",
+      "value": "UTC",
+      "message": "Timezone must be normalized to UTC."
+    },
+    {
+      "id": "intl.timezoneOffset",
+      "type": "numberEquals",
+      "path": "intl.timezoneOffset",
+      "value": 0,
+      "message": "Timezone offset must match UTC normalization."
+    },
+    {
+      "id": "screen.colorDepth",
+      "type": "numberEquals",
+      "path": "screen.colorDepth",
+      "value": 24,
+      "message": "screen.colorDepth drifted from persona profile."
+    },
+    {
+      "id": "window.devicePixelRatio",
+      "type": "numberEquals",
+      "path": "screen.devicePixelRatio",
+      "value": 1,
+      "message": "window.devicePixelRatio drifted from persona profile."
+    },
+    {
+      "id": "canvas.hashes",
+      "type": "allEqual",
+      "path": "canvas.hashes",
+      "message": "Canvas hashes changed within one session (instability leak)."
+    },
+    {
+      "id": "webgl.debugRendererInfoExposed",
+      "type": "equals",
+      "path": "webgl.debugRendererInfoExposed",
+      "value": false,
+      "message": "WEBGL_debug_renderer_info should be hidden."
+    },
+    {
+      "id": "webgl.vendor",
+      "type": "equals",
+      "path": "webgl.vendor",
+      "value": "Google Inc.",
+      "message": "WebGL vendor drifted from persona profile."
+    },
+    {
+      "id": "webgl.renderer",
+      "type": "includes",
+      "path": "webgl.renderer",
+      "value": "ANGLE",
+      "message": "WebGL renderer must remain ANGLE-based for this persona."
+    },
+    {
+      "id": "defense.personaContradictions",
+      "type": "lengthEquals",
+      "path": "defense.personaContradictions",
+      "value": 0,
+      "message": "Persona coherence contradictions were reported by runtime state."
+    },
+    {
+      "id": "probe.fingerprintScriptLoaded",
+      "type": "equals",
+      "path": "probe.fingerprintScriptLoaded",
+      "value": false,
+      "message": "Known fingerprint probe script executed unexpectedly."
+    },
+    {
+      "id": "probe.blockedScripts",
+      "type": "numberGte",
+      "path": "probe.blockedScripts",
+      "value": 1,
+      "message": "Expected at least one blocked script during adversarial probe."
+    }
+  ],
+  "crossRules": [
+    {
+      "id": "ua-platform-consistency",
+      "type": "ifIncludesThenEquals",
+      "leftPath": "navigator.userAgent",
+      "leftValue": "Windows NT",
+      "rightPath": "navigator.platform",
+      "rightValue": "Win32",
+      "message": "Windows UA must pair with Win32 platform."
+    },
+    {
+      "id": "ua-brand-consistency",
+      "type": "ifIncludesThenIncludes",
+      "leftPath": "navigator.userAgent",
+      "leftValue": "Chrome/120",
+      "rightPath": "navigator.userAgentData.brands.0.brand",
+      "rightValue": "Chromium",
+      "message": "UA brand hints must align with UA string major version."
+    },
+    {
+      "id": "timezone-consistency",
+      "type": "ifEqualsThenEquals",
+      "leftPath": "intl.timeZone",
+      "leftValue": "UTC",
+      "rightPath": "intl.timezoneOffset",
+      "rightValue": 0,
+      "message": "UTC timezone must align with 0 offset."
+    },
+    {
+      "id": "webgl-ua-consistency",
+      "type": "ifIncludesThenIncludes",
+      "leftPath": "navigator.userAgent",
+      "leftValue": "Chrome/120",
+      "rightPath": "webgl.renderer",
+      "rightValue": "ANGLE",
+      "message": "Chromium persona should expose ANGLE renderer signature."
+    }
+  ]
+}
