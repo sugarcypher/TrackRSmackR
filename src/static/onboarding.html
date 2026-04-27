@@ -588,7 +588,7 @@
   <p class="welcome-sub">The Cookie Bouncer is ready to work. Let's take 60 seconds to set up your safe list so you stay logged in everywhere you need to be — while we smack the trackers that follow you everywhere else.</p>
 
   <div class="info-box">
-    <strong>How TrackRSmackR works:</strong> We intercept every cookie your browser receives, classify it by purpose, and sort it into one of two encrypted Cookie Jars. The Guest List Jar holds session-approved cookies — the ones you need to stay logged in. Encrypted, persistent, protected. Everything else gets bounced into the Bounced Jar: encrypted containment with a 30-second clock. When the timer hits zero, it's smashed. Gone. No recovery. All of this happens locally on your device. Nothing leaves your browser — except our TrackRSmackR Cookie Clones. Which don't clone your information. They are clones of our Gingerbread Man: a generic, non-identifiable, standardized decoy that replaces your real cookie data with cookie-cut data as a safety layer.
+    <strong>How TrackRSmackR works:</strong> We intercept every cookie your browser receives, classify it by purpose, and sort it into one of two encrypted Cookie Jars. The Guest List Jar holds session-approved cookies — the ones you need to stay logged in. Encrypted, persistent, protected. Everything else gets bounced into the Bounced Jar: encrypted containment with a 30-second clock. When the timer hits zero, it's smashed. Gone. No recovery. All of this happens locally on your device. Nothing leaves your browser — except our TrackRSmackR Cookie Clones. Which don't clone your information. They are clones of our Gingerbread Men: a generic, non-identifiable, standardized decoy that replaces your real cookie data with cookie-cut data as a safety layer.
   </div>
 
   <div class="info-box warn">
@@ -596,7 +596,7 @@
   </div>
 
   <div class="info-box success">
-    <strong>🍪 Meet the Gingerbread Man:</strong> For sites you don't allowlist, TrackRSmackR serves up a decoy — a synthetic cookie identity that's identical for every tracker, everywhere. They all get the same fake signal. No real you. No real profile. Just a Gingerbread Man.
+    <strong>🍪 Meet the Gingerbread Men:</strong> For sites you don't allowlist, TrackRSmackR serves up a decoy — a synthetic cookie identity that's identical for every tracker, everywhere. They all get the same fake signal. No real you. No real profile. Just a Gingerbread Men.
   </div>
 
   <div class="nav-buttons">
@@ -764,31 +764,31 @@
 
   <div class="nav-buttons">
     <button class="btn-back" onclick="goTo(1)">← Back</button>
-    <button class="btn-next" onclick="goTo(3)">Next: The Gingerbread Man →</button>
+    <button class="btn-next" onclick="goTo(3)">Next: The Gingerbread Men →</button>
   </div>
 </div>
 
 <!-- STEP 3: GINGERBREAD MAN -->
 <div class="step" id="step-3">
-  <p class="step-counter">Step 3 of 5 — Gingerbread Man Mode</p>
+  <p class="step-counter">Step 3 of 5 — Gingerbread Men Mode</p>
 
   <div class="gbm-hero">
     <span class="gbm-icon">🫚🍪</span>
-    <h2 class="step-title">Meet the Gingerbread Man</h2>
+    <h2 class="step-title">Meet the Gingerbread Men</h2>
     <p class="step-sub">For sites not on your safe list, TrackRSmackR serves up a decoy — a synthetic cookie identity that's identical for every tracker, everywhere. They all get the same fake signal. No real you. No real profile.</p>
   </div>
 
   <div class="info-box">
-    <strong>How it works:</strong> Real trackers build profiles by collecting unique signals — your cookie IDs, your fingerprint, your behavior patterns. The Gingerbread Man scrambles that by presenting a standardized synthetic identity. Every tracker gets the same cookie. It's like giving every surveillance camera in the city the same face to photograph.
+    <strong>How it works:</strong> Real trackers build profiles by collecting unique signals — your cookie IDs, your fingerprint, your behavior patterns. The Gingerbread Men scrambles that by presenting a standardized synthetic identity. Every tracker gets the same cookie. It's like giving every surveillance camera in the city the same face to photograph.
   </div>
 
   <div class="info-box success">
-    <strong>Same logic as Uniform Persona Mode:</strong> Just as we normalize your browser fingerprint so every site sees the same generic browser — we normalize your cookie identity so every tracker sees the same generic user. One Gingerbread Man. Millions of trackers. Zero profiles built on you.
+    <strong>Same logic as Uniform Persona Mode:</strong> Just as we normalize your browser fingerprint so every site sees the same generic browser — we normalize your cookie identity so every tracker sees the same generic user. One Gingerbread Men. Millions of trackers. Zero profiles built on you.
   </div>
 
   <div class="feature-toggle">
     <div class="feature-toggle-info">
-      <h4>🫚 Gingerbread Man Mode</h4>
+      <h4>🫚 Gingerbread Men Mode</h4>
       <p>Present a standardized synthetic cookie identity to all non-allowlisted sites. Trackers get a decoy. You get privacy.</p>
     </div>
     <label class="toggle-switch">
@@ -866,7 +866,7 @@
   <div class="done-hero">
     <span class="done-icon">🥊</span>
     <h2 class="done-title">The <span>Bouncer</span> is On the Door.</h2>
-    <p style="color: var(--muted); font-size: 15px; line-height: 1.6; margin-bottom: 8px;">You are set up. TrackRSmackR is active, your safe list is loaded, and the Gingerbread Man is standing by. Trackers do not stand a chance.</p>
+    <p style="color: var(--muted); font-size: 15px; line-height: 1.6; margin-bottom: 8px;">You are set up. TrackRSmackR is active, your safe list is loaded, and the Gingerbread Men is standing by. Trackers do not stand a chance.</p>
 
     <div class="done-summary" id="done-summary"></div>
 
@@ -950,7 +950,7 @@ function buildSummary() {
   document.getElementById('done-summary').innerHTML = `
     <div class="summary-row"><span class="summary-label">Policy Mode</span><span class="summary-value">${selectedMode.charAt(0).toUpperCase() + selectedMode.slice(1)}</span></div>
     <div class="summary-row"><span class="summary-label">Safe List</span><span class="summary-value">${allowlist.length} domains allowlisted</span></div>
-    <div class="summary-row"><span class="summary-label">Gingerbread Man Mode</span><span class="summary-value">${gbm ? '✓ Active' : '✗ Off'}</span></div>
+    <div class="summary-row"><span class="summary-label">Gingerbread Men Mode</span><span class="summary-value">${gbm ? '✓ Active' : '✗ Off'}</span></div>
     <div class="summary-row"><span class="summary-label">Uniform Persona Mode</span><span class="summary-value">${persona ? '✓ Active' : '✗ Off'}</span></div>
     <div class="summary-row"><span class="summary-label">Regenerative Cookie Shield</span><span class="summary-value">${regen ? '✓ Active' : '✗ Off'}</span></div>
   `;

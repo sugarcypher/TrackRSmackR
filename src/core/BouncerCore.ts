@@ -31,6 +31,7 @@ import { CakeCookieDecoyWorker } from '../workers/CakeCookieDecoyWorker.js';
 import { TutorSwarmWorker } from '../workers/TutorSwarmWorker.js';
 import { ContextProfileWorker } from '../workers/ContextProfileWorker.js';
 import { PolicyInvariantWorker } from '../workers/PolicyInvariantWorker.js';
+import { isGingerbreadDecoyValue, isGingerbreadManEnabled } from '../utils/GingerbreadMan.js';
 
 interface BouncerEventMap {
   COOKIE_OBSERVED: {
@@ -442,6 +443,10 @@ export class BouncerCore {
       return;
     }
 
+    if (isGingerbreadDecoyValue(cookie.value)) {
+      return;
+    }
+
     await this.eventBus.publish('COOKIE_OBSERVED', 'CookieObserverWorker', { cookie }, { confidence: 0.98 });
   }
 
@@ -451,6 +456,13 @@ export class BouncerCore {
     correlationId: string
   ): Promise<EnforcementResult> {
     if (decision.action === 'QUARANTINE' || decision.action === 'BLOCK') {
+      if (await isGingerbreadManEnabled()) {
+        const substituted = await this.blockerWorker.substituteWithDecoy(cookie);
+        if (substituted) {
+          return { outcome: 'GINGERBREAD_SUBSTITUTED' };
+        }
+      }
+
       await this.blockerWorker.removeCookie(cookie);
 
       if (decision.targetJar === JarType.QUARANTINE) {
