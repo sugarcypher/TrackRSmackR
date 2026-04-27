@@ -2,7 +2,7 @@ import type { PolicyResult } from '../core/PolicyEngine.js';
 import { PolicyEngine } from '../core/PolicyEngine.js';
 import {
   getGingerbreadValue,
-  loadGingerbreadManEnabled
+  isGingerbreadManEnabled
 } from '../utils/GingerbreadMan.js';
 
 export interface ClassifiedCookieResult {
@@ -20,7 +20,7 @@ export class ClassifierWorker {
     if (
       decision.targetJar === 'QUARANTINE' &&
       decision.action !== 'ALLOW' &&
-      (await loadGingerbreadManEnabled())
+      (await isGingerbreadManEnabled())
     ) {
       return {
         cookie: {
