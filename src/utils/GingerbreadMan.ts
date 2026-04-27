@@ -1,23 +1,5 @@
-export const GingerbreadManCookie: Record<string, string> = {
-  '_ga': 'GA1.1.0000000000.0000000000',
-  '_gid': 'GA1.1.0000000000.0000000000',
-  '_gat': '1',
-  '_gcl_au': '1.1.0000000000.0000000000',
-  '_fbp': 'fb.1.0000000000000.0000000000',
-  '_fbc': 'fb.1.0000000000000.IwAR0000000000000000000000',
-  '_dd_s': 'rum=0&id=00000000-0000-0000-0000-000000000000&created=0000000000000&expire=0000000000000',
-  '__secure': 'gingerbread-secure-cookie-decoy',
-  '__host': 'gingerbread-host-cookie-decoy',
-  '__utma': '000000000.0000000000.0000000000.0000000000.0000000000.1',
-  '__utmz': '000000000.0000000000.1.1.utmcsr=gingerbread|utmccn=decoy|utmcmd=none',
-  '_pin_unauth': 'dWlkPUdJTkdFUkJSRUFELU1BTi1ERUNPWQ',
-  '_tt_enable_cookie': '1',
-  'uid': '00000000-0000-0000-0000-000000000000',
-  'id': '00000000-0000-0000-0000-000000000000',
-  'tracker': 'gingerbread-tracker-cookie-decoy',
-  'ads': 'gingerbread-ads-cookie-decoy',
-  'generic': 'gingerbread-man-cookie-decoy-v1'
-};
+import { getAssignedPersona } from './PersonaSelector.js';
+import { PERSONA_PROFILES } from './PersonaProfiles.js';
 
 export let GINGERBREAD_MAN_ENABLED = true;
 
@@ -30,14 +12,24 @@ export async function isGingerbreadManEnabled(): Promise<boolean> {
   return GINGERBREAD_MAN_ENABLED;
 }
 
-export function getGingerbreadValue(cookieName: string): string {
+export async function getGingerbreadValue(cookieName: string): Promise<string> {
+  const persona = await getAssignedPersona();
   const lowerName = cookieName.toLowerCase();
+  const table = persona.cookieValues as unknown as Record<string, string>;
 
-  for (const [pattern, value] of Object.entries(GingerbreadManCookie)) {
+  for (const [pattern, value] of Object.entries(table)) {
     if (pattern !== 'generic' && lowerName.includes(pattern)) {
       return value;
     }
   }
 
-  return GingerbreadManCookie.generic;
+  return table.generic;
+}
+
+const GINGERBREAD_DECOY_VALUES = new Set<string>(
+  PERSONA_PROFILES.flatMap((p) => Object.values(p.cookieValues))
+);
+
+export function isGingerbreadDecoyValue(value: string): boolean {
+  return GINGERBREAD_DECOY_VALUES.has(value);
 }

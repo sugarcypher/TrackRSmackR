@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TrackRSmackR - The Cookie Bouncer",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Autonomous privacy enforcement. Local-only by default.",
   "permissions": [
     "cookies",

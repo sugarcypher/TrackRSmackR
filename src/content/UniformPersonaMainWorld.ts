@@ -2,6 +2,7 @@
   const PERSONA_MARKER = '__trackr_uniform_persona_applied__';
   const PERSONA_ENTROPY_ATTR = 'data-labcoat-entropy';
   const PERSONA_SCRIPT_BLOCKLIST_ATTR = 'data-labcoat-script-blocklist';
+  const PERSONA_ASSIGNMENT_ATTR = 'data-labcoat-persona-index';
 
   const root = document.documentElement;
   if (!root) {
@@ -27,8 +28,11 @@
 
   const entropyNormalizationEnabled = root.getAttribute(PERSONA_ENTROPY_ATTR) !== '0';
   const scriptBlocklistEnabled = root.getAttribute(PERSONA_SCRIPT_BLOCKLIST_ATTR) !== '0';
+  const assignedIndexAttr = root.getAttribute(PERSONA_ASSIGNMENT_ATTR);
+  const parsedAssignedIndex = assignedIndexAttr === null ? NaN : Number.parseInt(assignedIndexAttr, 10);
   root.removeAttribute(PERSONA_ENTROPY_ATTR);
   root.removeAttribute(PERSONA_SCRIPT_BLOCKLIST_ATTR);
+  root.removeAttribute(PERSONA_ASSIGNMENT_ATTR);
 
   const hostPatternSources = [
     '(^|\\.)fingerprintjs\\.com$',
@@ -56,20 +60,13 @@
   const resourcePatterns = resourcePatternSources.map((source) => new RegExp(source, 'i'));
   const inlinePatterns = inlinePatternSources.map((source) => new RegExp(source, 'i'));
 
-  const sessionSeed = (() => {
-    try {
-      const bytes = new Uint32Array(1);
-      crypto.getRandomValues(bytes);
-      return bytes[0] >>> 0;
-    } catch (_error) {
-      return Math.floor(Math.random() * 0xffffffff) >>> 0;
-    }
-  })();
-
+  // NOTE: this array MUST stay in sync with src/utils/PersonaProfiles.ts.
+  // It's duplicated because the MainWorld script runs in the page context
+  // and cannot import from extension modules.
   const personaProfiles = [
     {
-      id: 'win-chromium-120',
-      hardwareConcurrency: 4,
+      id: 'gingerbread-man',
+      hardwareConcurrency: 8,
       deviceMemory: 8,
       language: 'en-US',
       languages: ['en-US', 'en'],
@@ -87,36 +84,290 @@
       uaFullVersion: '120.0.0.0',
       uaBrands: [
         { brand: 'Chromium', version: '120' },
-        { brand: 'Not:A-Brand', version: '99' }
+        { brand: 'Not:A-Brand', version: '99' },
+        { brand: 'Google Chrome', version: '120' }
       ],
       uaFullVersionList: [
         { brand: 'Chromium', version: '120.0.0.0' },
-        { brand: 'Not:A-Brand', version: '99.0.0.0' }
+        { brand: 'Not:A-Brand', version: '99.0.0.0' },
+        { brand: 'Google Chrome', version: '120.0.0.0' }
       ],
       screenColorDepth: 24,
       screenPixelDepth: 24,
       devicePixelRatio: 1,
-      timezone: 'UTC',
+      timezone: 'America/New_York',
+      timezoneOffset: 300,
+      webglVendor: 'Google Inc. (Intel)',
+      webglRenderer: 'ANGLE (Intel, Intel(R) UHD Graphics 630 Direct3D11 vs_5_0 ps_5_0, D3D11)',
+      glVendor: 'WebKit',
+      glVersion: 'WebKit WebGL'
+    },
+    {
+      id: 'gingerbread-woman',
+      hardwareConcurrency: 12,
+      deviceMemory: 16,
+      language: 'en-US',
+      languages: ['en-US', 'en'],
+      platform: 'Win32',
+      userAgent:
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+      vendor: 'Google Inc.',
+      doNotTrack: '1',
+      maxTouchPoints: 0,
+      webdriver: false,
+      uaPlatform: 'Windows',
+      uaArchitecture: 'x86',
+      uaBitness: '64',
+      uaPlatformVersion: '15.0.0',
+      uaFullVersion: '121.0.0.0',
+      uaBrands: [
+        { brand: 'Chromium', version: '121' },
+        { brand: 'Not:A-Brand', version: '24' },
+        { brand: 'Google Chrome', version: '121' }
+      ],
+      uaFullVersionList: [
+        { brand: 'Chromium', version: '121.0.0.0' },
+        { brand: 'Not:A-Brand', version: '24.0.0.0' },
+        { brand: 'Google Chrome', version: '121.0.0.0' }
+      ],
+      screenColorDepth: 24,
+      screenPixelDepth: 24,
+      devicePixelRatio: 1,
+      timezone: 'America/Los_Angeles',
+      timezoneOffset: 480,
+      webglVendor: 'Google Inc. (NVIDIA)',
+      webglRenderer: 'ANGLE (NVIDIA, NVIDIA GeForce GTX 1660 Direct3D11 vs_5_0 ps_5_0, D3D11)',
+      glVendor: 'WebKit',
+      glVersion: 'WebKit WebGL'
+    },
+    {
+      id: 'snickerdoodle',
+      hardwareConcurrency: 8,
+      deviceMemory: 16,
+      language: 'en-US',
+      languages: ['en-US', 'en'],
+      platform: 'Win32',
+      userAgent:
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0',
+      vendor: 'Google Inc.',
+      doNotTrack: '1',
+      maxTouchPoints: 0,
+      webdriver: false,
+      uaPlatform: 'Windows',
+      uaArchitecture: 'x86',
+      uaBitness: '64',
+      uaPlatformVersion: '15.0.0',
+      uaFullVersion: '121.0.0.0',
+      uaBrands: [
+        { brand: 'Chromium', version: '121' },
+        { brand: 'Not:A-Brand', version: '24' },
+        { brand: 'Microsoft Edge', version: '121' }
+      ],
+      uaFullVersionList: [
+        { brand: 'Chromium', version: '121.0.0.0' },
+        { brand: 'Not:A-Brand', version: '24.0.0.0' },
+        { brand: 'Microsoft Edge', version: '121.0.0.0' }
+      ],
+      screenColorDepth: 24,
+      screenPixelDepth: 24,
+      devicePixelRatio: 1,
+      timezone: 'America/Chicago',
+      timezoneOffset: 360,
+      webglVendor: 'Google Inc. (Intel)',
+      webglRenderer: 'ANGLE (Intel, Intel(R) Iris(R) Xe Graphics Direct3D11 vs_5_0 ps_5_0, D3D11)',
+      glVendor: 'WebKit',
+      glVersion: 'WebKit WebGL'
+    },
+    {
+      id: 'macaron',
+      hardwareConcurrency: 8,
+      deviceMemory: 8,
+      language: 'fr-FR',
+      languages: ['fr-FR', 'fr', 'en-US', 'en'],
+      platform: 'MacIntel',
+      userAgent:
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2.1 Safari/605.1.15',
+      vendor: 'Apple Computer, Inc.',
+      doNotTrack: '1',
+      maxTouchPoints: 0,
+      webdriver: false,
+      uaPlatform: 'macOS',
+      uaArchitecture: 'arm',
+      uaBitness: '64',
+      uaPlatformVersion: '14.2.1',
+      uaFullVersion: '17.2.1',
+      uaBrands: [
+        { brand: 'Safari', version: '17' }
+      ],
+      uaFullVersionList: [
+        { brand: 'Safari', version: '17.2.1' }
+      ],
+      screenColorDepth: 30,
+      screenPixelDepth: 30,
+      devicePixelRatio: 2,
+      timezone: 'Europe/Paris',
+      timezoneOffset: -60,
+      webglVendor: 'Apple Inc.',
+      webglRenderer: 'Apple GPU',
+      glVendor: 'WebKit',
+      glVersion: 'WebKit WebGL'
+    },
+    {
+      id: 'madeleine',
+      hardwareConcurrency: 8,
+      deviceMemory: 8,
+      language: 'en-GB',
+      languages: ['en-GB', 'en'],
+      platform: 'Linux x86_64',
+      userAgent:
+        'Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0',
+      vendor: '',
+      doNotTrack: '1',
+      maxTouchPoints: 0,
+      webdriver: false,
+      uaPlatform: 'Linux',
+      uaArchitecture: 'x86',
+      uaBitness: '64',
+      uaPlatformVersion: '6.1.0',
+      uaFullVersion: '121.0',
+      uaBrands: [
+        { brand: 'Firefox', version: '121' }
+      ],
+      uaFullVersionList: [
+        { brand: 'Firefox', version: '121.0' }
+      ],
+      screenColorDepth: 24,
+      screenPixelDepth: 24,
+      devicePixelRatio: 1,
+      timezone: 'Europe/London',
       timezoneOffset: 0,
-      webglVendor: 'Google Inc.',
-      webglRenderer: 'ANGLE (NVIDIA, NVIDIA GeForce GTX 1060 Direct3D11 vs_5_0 ps_5_0)',
+      webglVendor: 'Mesa',
+      webglRenderer: 'Mesa Intel(R) UHD Graphics 620 (KBL GT2)',
+      glVendor: 'Mozilla',
+      glVersion: 'Mozilla'
+    },
+    {
+      id: 'biscotti',
+      hardwareConcurrency: 10,
+      deviceMemory: 16,
+      language: 'de-DE',
+      languages: ['de-DE', 'de', 'en-US', 'en'],
+      platform: 'MacIntel',
+      userAgent:
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      vendor: 'Google Inc.',
+      doNotTrack: '1',
+      maxTouchPoints: 0,
+      webdriver: false,
+      uaPlatform: 'macOS',
+      uaArchitecture: 'arm',
+      uaBitness: '64',
+      uaPlatformVersion: '14.2.0',
+      uaFullVersion: '120.0.0.0',
+      uaBrands: [
+        { brand: 'Chromium', version: '120' },
+        { brand: 'Not:A-Brand', version: '99' },
+        { brand: 'Google Chrome', version: '120' }
+      ],
+      uaFullVersionList: [
+        { brand: 'Chromium', version: '120.0.0.0' },
+        { brand: 'Not:A-Brand', version: '99.0.0.0' },
+        { brand: 'Google Chrome', version: '120.0.0.0' }
+      ],
+      screenColorDepth: 30,
+      screenPixelDepth: 30,
+      devicePixelRatio: 2,
+      timezone: 'Europe/Berlin',
+      timezoneOffset: -60,
+      webglVendor: 'Apple Inc.',
+      webglRenderer: 'Apple M2',
+      glVendor: 'WebKit',
+      glVersion: 'WebKit WebGL'
+    },
+    {
+      id: 'mochi',
+      hardwareConcurrency: 16,
+      deviceMemory: 16,
+      language: 'ja-JP',
+      languages: ['ja-JP', 'ja', 'en-US', 'en'],
+      platform: 'Win32',
+      userAgent:
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      vendor: 'Google Inc.',
+      doNotTrack: '1',
+      maxTouchPoints: 0,
+      webdriver: false,
+      uaPlatform: 'Windows',
+      uaArchitecture: 'x86',
+      uaBitness: '64',
+      uaPlatformVersion: '15.0.0',
+      uaFullVersion: '120.0.0.0',
+      uaBrands: [
+        { brand: 'Chromium', version: '120' },
+        { brand: 'Not:A-Brand', version: '99' },
+        { brand: 'Google Chrome', version: '120' }
+      ],
+      uaFullVersionList: [
+        { brand: 'Chromium', version: '120.0.0.0' },
+        { brand: 'Not:A-Brand', version: '99.0.0.0' },
+        { brand: 'Google Chrome', version: '120.0.0.0' }
+      ],
+      screenColorDepth: 24,
+      screenPixelDepth: 24,
+      devicePixelRatio: 1,
+      timezone: 'Asia/Tokyo',
+      timezoneOffset: -540,
+      webglVendor: 'Google Inc. (NVIDIA)',
+      webglRenderer: 'ANGLE (NVIDIA, NVIDIA GeForce RTX 3060 Direct3D11 vs_5_0 ps_5_0, D3D11)',
       glVendor: 'WebKit',
       glVersion: 'WebKit WebGL'
     }
   ] as const;
 
-  const personaProfile = personaProfiles[Math.abs(sessionSeed) % personaProfiles.length];
+  const fallbackSeed = (() => {
+    try {
+      const bytes = new Uint32Array(1);
+      crypto.getRandomValues(bytes);
+      return bytes[0] >>> 0;
+    } catch (_error) {
+      return Math.floor(Math.random() * 0xffffffff) >>> 0;
+    }
+  })();
+
+  const personaIndex = Number.isFinite(parsedAssignedIndex)
+    ? ((parsedAssignedIndex % personaProfiles.length) + personaProfiles.length) % personaProfiles.length
+    : Math.abs(fallbackSeed) % personaProfiles.length;
+  const personaProfile = personaProfiles[personaIndex];
   const contradictions: string[] = [];
 
-  if (!personaProfile.userAgent.includes('Windows NT') || personaProfile.platform !== 'Win32') {
+  const isWindowsUA = personaProfile.userAgent.includes('Windows NT');
+  const isMacUA = personaProfile.userAgent.includes('Mac OS X') || personaProfile.userAgent.includes('Macintosh');
+  const isLinuxUA = personaProfile.userAgent.includes('Linux') || personaProfile.userAgent.includes('X11');
+
+  if (isWindowsUA && personaProfile.platform !== 'Win32') {
+    contradictions.push('platform-useragent mismatch');
+  } else if (isMacUA && personaProfile.platform !== 'MacIntel') {
+    contradictions.push('platform-useragent mismatch');
+  } else if (isLinuxUA && !personaProfile.platform.includes('Linux')) {
     contradictions.push('platform-useragent mismatch');
   }
-  if (!personaProfile.webglRenderer.includes('ANGLE') || !personaProfile.userAgent.includes('Chrome/')) {
+
+  const isAngle = personaProfile.webglRenderer.startsWith('ANGLE');
+  const isApple = personaProfile.webglRenderer.startsWith('Apple') || personaProfile.webglVendor === 'Apple Inc.';
+  const isMesa = personaProfile.webglRenderer.startsWith('Mesa') || personaProfile.webglVendor === 'Mesa';
+
+  if (isWindowsUA && !isAngle) {
+    contradictions.push('webgl-useragent mismatch');
+  } else if (isMacUA && !isApple) {
+    contradictions.push('webgl-useragent mismatch');
+  } else if (isLinuxUA && !isMesa) {
     contradictions.push('webgl-useragent mismatch');
   }
+
+  const expectedUaPlatform = isWindowsUA ? 'Windows' : isMacUA ? 'macOS' : isLinuxUA ? 'Linux' : '';
   if (
-    personaProfile.uaPlatform !== 'Windows' ||
-    !Array.isArray(personaProfile.uaBrands)
+    expectedUaPlatform !== '' &&
+    (personaProfile.uaPlatform !== expectedUaPlatform || !Array.isArray(personaProfile.uaBrands))
   ) {
     contradictions.push('ua-client-hints mismatch');
   }
@@ -342,7 +593,7 @@
   };
 
   const noiseHash = (x: number, y: number, salt: number): number => {
-    let value = sessionSeed ^ (x + 0x9e3779b9) ^ (y * 0x85ebca6b) ^ salt;
+    let value = fallbackSeed ^ (x + 0x9e3779b9) ^ (y * 0x85ebca6b) ^ salt;
     value = Math.imul(value ^ (value >>> 16), 0x7feb352d);
     value = Math.imul(value ^ (value >>> 15), 0x846ca68b);
     return (value ^ (value >>> 16)) >>> 0;
@@ -368,7 +619,7 @@
 
     try {
       const pixel = cloneContext.getImageData(x, y, 1, 1);
-      pixel.data[0] = (pixel.data[0] + ((sessionSeed % 5) + 1)) % 256;
+      pixel.data[0] = (pixel.data[0] + ((fallbackSeed % 5) + 1)) % 256;
       cloneContext.putImageData(pixel, x, y);
     } catch (_error) {
       return canvas;
