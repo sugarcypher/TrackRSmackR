@@ -1,11 +1,17 @@
 import { BouncerCore } from './BouncerCore.js';
 import { enforceLocalOnlyRuntime } from './LocalOnlyGuard.js';
-import { getOrCreateInstallId } from '../utils/PersonaSelector.js';
+import {
+  cacheAssignedPersonaForContentScripts,
+  getOrCreateInstallId
+} from '../utils/PersonaSelector.js';
 
 enforceLocalOnlyRuntime();
 const bouncer = new BouncerCore();
 void bouncer.start();
-void getOrCreateInstallId();
+void (async () => {
+  await getOrCreateInstallId();
+  await cacheAssignedPersonaForContentScripts();
+})();
 
 const ONBOARDING_URL_PATH = 'static/onboarding.html';
 
