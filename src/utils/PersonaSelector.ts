@@ -1,6 +1,7 @@
 import { PERSONA_PROFILES, getPersonaByIndex, type PersonaProfile } from './PersonaProfiles.js';
 
 const INSTALL_ID_KEY = 'trackrsmackrInstallId';
+const ASSIGNED_PERSONA_KEY = 'trackrsmackrAssignedPersona';
 
 let cachedInstallId: string | null = null;
 let cachedPersonaIndex: number | null = null;
@@ -39,6 +40,13 @@ export async function getAssignedPersona(): Promise<PersonaProfile> {
   const index = await getAssignedPersonaIndex();
   return getPersonaByIndex(index);
 }
+
+export async function cacheAssignedPersonaForContentScripts(): Promise<void> {
+  const persona = await getAssignedPersona();
+  await chrome.storage.local.set({ [ASSIGNED_PERSONA_KEY]: persona });
+}
+
+export const ASSIGNED_PERSONA_STORAGE_KEY = ASSIGNED_PERSONA_KEY;
 
 function generateInstallId(): string {
   const bytes = new Uint8Array(16);

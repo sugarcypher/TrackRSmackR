@@ -2,7 +2,7 @@
   const PERSONA_MARKER = '__trackr_uniform_persona_applied__';
   const PERSONA_ENTROPY_ATTR = 'data-labcoat-entropy';
   const PERSONA_SCRIPT_BLOCKLIST_ATTR = 'data-labcoat-script-blocklist';
-  const PERSONA_ASSIGNMENT_ATTR = 'data-labcoat-persona-index';
+  const PERSONA_ASSIGNMENT_ATTR = 'data-labcoat-persona-data';
 
   const root = document.documentElement;
   if (!root) {
@@ -28,11 +28,58 @@
 
   const entropyNormalizationEnabled = root.getAttribute(PERSONA_ENTROPY_ATTR) !== '0';
   const scriptBlocklistEnabled = root.getAttribute(PERSONA_SCRIPT_BLOCKLIST_ATTR) !== '0';
-  const assignedIndexAttr = root.getAttribute(PERSONA_ASSIGNMENT_ATTR);
-  const parsedAssignedIndex = assignedIndexAttr === null ? NaN : Number.parseInt(assignedIndexAttr, 10);
+  const personaJsonAttr = root.getAttribute(PERSONA_ASSIGNMENT_ATTR);
   root.removeAttribute(PERSONA_ENTROPY_ATTR);
   root.removeAttribute(PERSONA_SCRIPT_BLOCKLIST_ATTR);
   root.removeAttribute(PERSONA_ASSIGNMENT_ATTR);
+
+  if (personaJsonAttr === null) {
+    return;
+  }
+
+  let personaProfile: {
+    id: string;
+    hardwareConcurrency: number;
+    deviceMemory: number;
+    language: string;
+    languages: readonly string[];
+    platform: string;
+    userAgent: string;
+    vendor: string;
+    doNotTrack: string;
+    maxTouchPoints: number;
+    webdriver: boolean;
+    uaPlatform: string;
+    uaArchitecture: string;
+    uaBitness: string;
+    uaPlatformVersion: string;
+    uaFullVersion: string;
+    uaBrands: ReadonlyArray<{ brand: string; version: string }>;
+    uaFullVersionList: ReadonlyArray<{ brand: string; version: string }>;
+    screenColorDepth: number;
+    screenPixelDepth: number;
+    devicePixelRatio: number;
+    timezone: string;
+    timezoneOffset: number;
+    webglVendor: string;
+    webglRenderer: string;
+    glVendor: string;
+    glVersion: string;
+  };
+  try {
+    personaProfile = JSON.parse(personaJsonAttr);
+  } catch (_error) {
+    return;
+  }
+  if (
+    personaProfile === null ||
+    typeof personaProfile !== 'object' ||
+    typeof personaProfile.userAgent !== 'string' ||
+    typeof personaProfile.platform !== 'string' ||
+    !Array.isArray(personaProfile.languages)
+  ) {
+    return;
+  }
 
   const hostPatternSources = [
     '(^|\\.)fingerprintjs\\.com$',
@@ -60,269 +107,6 @@
   const resourcePatterns = resourcePatternSources.map((source) => new RegExp(source, 'i'));
   const inlinePatterns = inlinePatternSources.map((source) => new RegExp(source, 'i'));
 
-  // NOTE: this array MUST stay in sync with src/utils/PersonaProfiles.ts.
-  // It's duplicated because the MainWorld script runs in the page context
-  // and cannot import from extension modules.
-  const personaProfiles = [
-    {
-      id: 'gingerbread-man',
-      hardwareConcurrency: 8,
-      deviceMemory: 8,
-      language: 'en-US',
-      languages: ['en-US', 'en'],
-      platform: 'Win32',
-      userAgent:
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      vendor: 'Google Inc.',
-      doNotTrack: '1',
-      maxTouchPoints: 0,
-      webdriver: false,
-      uaPlatform: 'Windows',
-      uaArchitecture: 'x86',
-      uaBitness: '64',
-      uaPlatformVersion: '10.0.0',
-      uaFullVersion: '120.0.0.0',
-      uaBrands: [
-        { brand: 'Chromium', version: '120' },
-        { brand: 'Not:A-Brand', version: '99' },
-        { brand: 'Google Chrome', version: '120' }
-      ],
-      uaFullVersionList: [
-        { brand: 'Chromium', version: '120.0.0.0' },
-        { brand: 'Not:A-Brand', version: '99.0.0.0' },
-        { brand: 'Google Chrome', version: '120.0.0.0' }
-      ],
-      screenColorDepth: 24,
-      screenPixelDepth: 24,
-      devicePixelRatio: 1,
-      timezone: 'America/New_York',
-      timezoneOffset: 300,
-      webglVendor: 'Google Inc. (Intel)',
-      webglRenderer: 'ANGLE (Intel, Intel(R) UHD Graphics 630 Direct3D11 vs_5_0 ps_5_0, D3D11)',
-      glVendor: 'WebKit',
-      glVersion: 'WebKit WebGL'
-    },
-    {
-      id: 'gingerbread-woman',
-      hardwareConcurrency: 12,
-      deviceMemory: 16,
-      language: 'en-US',
-      languages: ['en-US', 'en'],
-      platform: 'Win32',
-      userAgent:
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-      vendor: 'Google Inc.',
-      doNotTrack: '1',
-      maxTouchPoints: 0,
-      webdriver: false,
-      uaPlatform: 'Windows',
-      uaArchitecture: 'x86',
-      uaBitness: '64',
-      uaPlatformVersion: '15.0.0',
-      uaFullVersion: '121.0.0.0',
-      uaBrands: [
-        { brand: 'Chromium', version: '121' },
-        { brand: 'Not:A-Brand', version: '24' },
-        { brand: 'Google Chrome', version: '121' }
-      ],
-      uaFullVersionList: [
-        { brand: 'Chromium', version: '121.0.0.0' },
-        { brand: 'Not:A-Brand', version: '24.0.0.0' },
-        { brand: 'Google Chrome', version: '121.0.0.0' }
-      ],
-      screenColorDepth: 24,
-      screenPixelDepth: 24,
-      devicePixelRatio: 1,
-      timezone: 'America/Los_Angeles',
-      timezoneOffset: 480,
-      webglVendor: 'Google Inc. (NVIDIA)',
-      webglRenderer: 'ANGLE (NVIDIA, NVIDIA GeForce GTX 1660 Direct3D11 vs_5_0 ps_5_0, D3D11)',
-      glVendor: 'WebKit',
-      glVersion: 'WebKit WebGL'
-    },
-    {
-      id: 'snickerdoodle',
-      hardwareConcurrency: 8,
-      deviceMemory: 16,
-      language: 'en-US',
-      languages: ['en-US', 'en'],
-      platform: 'Win32',
-      userAgent:
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0',
-      vendor: 'Google Inc.',
-      doNotTrack: '1',
-      maxTouchPoints: 0,
-      webdriver: false,
-      uaPlatform: 'Windows',
-      uaArchitecture: 'x86',
-      uaBitness: '64',
-      uaPlatformVersion: '15.0.0',
-      uaFullVersion: '121.0.0.0',
-      uaBrands: [
-        { brand: 'Chromium', version: '121' },
-        { brand: 'Not:A-Brand', version: '24' },
-        { brand: 'Microsoft Edge', version: '121' }
-      ],
-      uaFullVersionList: [
-        { brand: 'Chromium', version: '121.0.0.0' },
-        { brand: 'Not:A-Brand', version: '24.0.0.0' },
-        { brand: 'Microsoft Edge', version: '121.0.0.0' }
-      ],
-      screenColorDepth: 24,
-      screenPixelDepth: 24,
-      devicePixelRatio: 1,
-      timezone: 'America/Chicago',
-      timezoneOffset: 360,
-      webglVendor: 'Google Inc. (Intel)',
-      webglRenderer: 'ANGLE (Intel, Intel(R) Iris(R) Xe Graphics Direct3D11 vs_5_0 ps_5_0, D3D11)',
-      glVendor: 'WebKit',
-      glVersion: 'WebKit WebGL'
-    },
-    {
-      id: 'macaron',
-      hardwareConcurrency: 8,
-      deviceMemory: 8,
-      language: 'fr-FR',
-      languages: ['fr-FR', 'fr', 'en-US', 'en'],
-      platform: 'MacIntel',
-      userAgent:
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2.1 Safari/605.1.15',
-      vendor: 'Apple Computer, Inc.',
-      doNotTrack: '1',
-      maxTouchPoints: 0,
-      webdriver: false,
-      uaPlatform: 'macOS',
-      uaArchitecture: 'arm',
-      uaBitness: '64',
-      uaPlatformVersion: '14.2.1',
-      uaFullVersion: '17.2.1',
-      uaBrands: [
-        { brand: 'Safari', version: '17' }
-      ],
-      uaFullVersionList: [
-        { brand: 'Safari', version: '17.2.1' }
-      ],
-      screenColorDepth: 30,
-      screenPixelDepth: 30,
-      devicePixelRatio: 2,
-      timezone: 'Europe/Paris',
-      timezoneOffset: -60,
-      webglVendor: 'Apple Inc.',
-      webglRenderer: 'Apple GPU',
-      glVendor: 'WebKit',
-      glVersion: 'WebKit WebGL'
-    },
-    {
-      id: 'madeleine',
-      hardwareConcurrency: 8,
-      deviceMemory: 8,
-      language: 'en-GB',
-      languages: ['en-GB', 'en'],
-      platform: 'Linux x86_64',
-      userAgent:
-        'Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0',
-      vendor: '',
-      doNotTrack: '1',
-      maxTouchPoints: 0,
-      webdriver: false,
-      uaPlatform: 'Linux',
-      uaArchitecture: 'x86',
-      uaBitness: '64',
-      uaPlatformVersion: '6.1.0',
-      uaFullVersion: '121.0',
-      uaBrands: [
-        { brand: 'Firefox', version: '121' }
-      ],
-      uaFullVersionList: [
-        { brand: 'Firefox', version: '121.0' }
-      ],
-      screenColorDepth: 24,
-      screenPixelDepth: 24,
-      devicePixelRatio: 1,
-      timezone: 'Europe/London',
-      timezoneOffset: 0,
-      webglVendor: 'Mesa',
-      webglRenderer: 'Mesa Intel(R) UHD Graphics 620 (KBL GT2)',
-      glVendor: 'Mozilla',
-      glVersion: 'Mozilla'
-    },
-    {
-      id: 'biscotti',
-      hardwareConcurrency: 10,
-      deviceMemory: 16,
-      language: 'de-DE',
-      languages: ['de-DE', 'de', 'en-US', 'en'],
-      platform: 'MacIntel',
-      userAgent:
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      vendor: 'Google Inc.',
-      doNotTrack: '1',
-      maxTouchPoints: 0,
-      webdriver: false,
-      uaPlatform: 'macOS',
-      uaArchitecture: 'arm',
-      uaBitness: '64',
-      uaPlatformVersion: '14.2.0',
-      uaFullVersion: '120.0.0.0',
-      uaBrands: [
-        { brand: 'Chromium', version: '120' },
-        { brand: 'Not:A-Brand', version: '99' },
-        { brand: 'Google Chrome', version: '120' }
-      ],
-      uaFullVersionList: [
-        { brand: 'Chromium', version: '120.0.0.0' },
-        { brand: 'Not:A-Brand', version: '99.0.0.0' },
-        { brand: 'Google Chrome', version: '120.0.0.0' }
-      ],
-      screenColorDepth: 30,
-      screenPixelDepth: 30,
-      devicePixelRatio: 2,
-      timezone: 'Europe/Berlin',
-      timezoneOffset: -60,
-      webglVendor: 'Apple Inc.',
-      webglRenderer: 'Apple M2',
-      glVendor: 'WebKit',
-      glVersion: 'WebKit WebGL'
-    },
-    {
-      id: 'mochi',
-      hardwareConcurrency: 16,
-      deviceMemory: 16,
-      language: 'ja-JP',
-      languages: ['ja-JP', 'ja', 'en-US', 'en'],
-      platform: 'Win32',
-      userAgent:
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      vendor: 'Google Inc.',
-      doNotTrack: '1',
-      maxTouchPoints: 0,
-      webdriver: false,
-      uaPlatform: 'Windows',
-      uaArchitecture: 'x86',
-      uaBitness: '64',
-      uaPlatformVersion: '15.0.0',
-      uaFullVersion: '120.0.0.0',
-      uaBrands: [
-        { brand: 'Chromium', version: '120' },
-        { brand: 'Not:A-Brand', version: '99' },
-        { brand: 'Google Chrome', version: '120' }
-      ],
-      uaFullVersionList: [
-        { brand: 'Chromium', version: '120.0.0.0' },
-        { brand: 'Not:A-Brand', version: '99.0.0.0' },
-        { brand: 'Google Chrome', version: '120.0.0.0' }
-      ],
-      screenColorDepth: 24,
-      screenPixelDepth: 24,
-      devicePixelRatio: 1,
-      timezone: 'Asia/Tokyo',
-      timezoneOffset: -540,
-      webglVendor: 'Google Inc. (NVIDIA)',
-      webglRenderer: 'ANGLE (NVIDIA, NVIDIA GeForce RTX 3060 Direct3D11 vs_5_0 ps_5_0, D3D11)',
-      glVendor: 'WebKit',
-      glVersion: 'WebKit WebGL'
-    }
-  ] as const;
 
   const fallbackSeed = (() => {
     try {
@@ -334,10 +118,6 @@
     }
   })();
 
-  const personaIndex = Number.isFinite(parsedAssignedIndex)
-    ? ((parsedAssignedIndex % personaProfiles.length) + personaProfiles.length) % personaProfiles.length
-    : Math.abs(fallbackSeed) % personaProfiles.length;
-  const personaProfile = personaProfiles[personaIndex];
   const contradictions: string[] = [];
 
   const isWindowsUA = personaProfile.userAgent.includes('Windows NT');

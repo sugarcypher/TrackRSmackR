@@ -41,10 +41,9 @@ const PERSONA_MARKER = '__trackr_uniform_persona_applied__';
 const PERSONA_SCRIPT_ID = '__labcoat_uniform_persona_main_script__';
 const PERSONA_ENTROPY_ATTR = 'data-labcoat-entropy';
 const PERSONA_SCRIPT_BLOCKLIST_ATTR = 'data-labcoat-script-blocklist';
-const PERSONA_ASSIGNMENT_ATTR = 'data-labcoat-persona-index';
-const PERSONA_INSTALL_ID_KEY = 'trackrsmackrInstallId';
-const PERSONA_PROFILE_COUNT = 7;
-let cachedPersonaIndex: number | null = null;
+const PERSONA_ASSIGNMENT_ATTR = 'data-labcoat-persona-data';
+const PERSONA_ASSIGNED_KEY = 'trackrsmackrAssignedPersona';
+let cachedPersonaJson: string | null = null;
 const BREAKAGE_FLUSH_MS = 1200;
 const BREAKAGE_SCORE_CAP = 80;
 const BREAKAGE_RATE_WINDOW_MS = 30_000;
@@ -126,33 +125,29 @@ function storageSetLocal(items: Record<string, unknown>): Promise<void> {
   });
 }
 
-function fnv1aHashIndex(input: string, modulo: number): number {
-  let hash = 2166136261;
-  for (let i = 0; i < input.length; i += 1) {
-    hash ^= input.charCodeAt(i);
-    hash = Math.imul(hash, 16777619);
+async function resolveAssignedPersonaJson(): Promise<string | null> {
+  if (cachedPersonaJson !== null) {
+    return cachedPersonaJson;
   }
-  return Math.abs(hash) % modulo;
-}
-
-async function resolvePersonaIndex(): Promise<number> {
-  if (cachedPersonaIndex !== null) {
-    return cachedPersonaIndex;
+  const stored = await storageGetLocal<{ [PERSONA_ASSIGNED_KEY]?: unknown }>(
+    PERSONA_ASSIGNED_KEY
+  );
+  const persona = stored[PERSONA_ASSIGNED_KEY];
+  if (persona && typeof persona === 'object') {
+    try {
+      cachedPersonaJson = JSON.stringify(persona);
+      return cachedPersonaJson;
+    } catch (_error) {
+      return null;
+    }
   }
-  const stored = await storageGetLocal<{ [PERSONA_INSTALL_ID_KEY]?: string }>(PERSONA_INSTALL_ID_KEY);
-  const installId = stored[PERSONA_INSTALL_ID_KEY];
-  if (typeof installId === 'string' && installId.length > 0) {
-    cachedPersonaIndex = fnv1aHashIndex(installId, PERSONA_PROFILE_COUNT);
-    return cachedPersonaIndex;
-  }
-  cachedPersonaIndex = 0;
-  return cachedPersonaIndex;
+  return null;
 }
 
 function setPersonaConfigAttributes(
   entropyNormalizationEnabled: boolean,
   scriptBlocklistEnabled: boolean,
-  personaIndex: number
+  personaJson: string | null
 ): boolean {
   const root = document.documentElement;
   if (!root) {
@@ -161,7 +156,9 @@ function setPersonaConfigAttributes(
 
   root.setAttribute(PERSONA_ENTROPY_ATTR, entropyNormalizationEnabled ? '1' : '0');
   root.setAttribute(PERSONA_SCRIPT_BLOCKLIST_ATTR, scriptBlocklistEnabled ? '1' : '0');
-  root.setAttribute(PERSONA_ASSIGNMENT_ATTR, String(personaIndex));
+  if (personaJson !== null) {
+    root.setAttribute(PERSONA_ASSIGNMENT_ATTR, personaJson);
+  }
   return true;
 }
 
@@ -173,13 +170,11 @@ function injectMainWorldPatch(
     return;
   }
 
-  const personaIndex = cachedPersonaIndex ?? 0;
-
   if (
     !setPersonaConfigAttributes(
       personaEntropyNormalizationEnabled,
       personaScriptBlocklistEnabled,
-      personaIndex
+      cachedPersonaJson
     )
   ) {
     document.addEventListener(
@@ -570,7 +565,7 @@ async function bootstrapPersona(): Promise<void> {
     'personaScriptBlocklistEnabled',
     'contextBreakageAdaptiveEnabled'
   ]);
-  await resolvePersonaIndex();
+  await resolveAssignedPersonaJson();
   const enabled = settings.uniformPersonaEnabled !== false;
   const entropyNormalizationEnabled = settings.personaEntropyNormalizationEnabled !== false;
   const scriptBlocklistEnabled = settings.personaScriptBlocklistEnabled !== false;
