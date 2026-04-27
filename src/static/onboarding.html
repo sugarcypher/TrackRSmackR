@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrackRSmackR — Setup</title>
+<style>
+  :root {
+    --bg: #0e1117;
+    --card: #13171f;
+    --card2: #161b26;
+    --line: #1e2330;
+    --text: #e2e5ef;
+    --muted: #6b7280;
+    --yellow: #f5c800;
+    --red: #e63329;
+    --green: #22c55e;
+    --cyan: #00c8f0;
+    --blue: #1e6fc8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    width: 520px;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  .progress-bar {
+    height: 3px;
+    background: var(--line);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--yellow), var(--red));
+    transition: width 0.4s ease;
+  }
+
+  .step {
+    display: none;
+    padding: 32px 28px;
+    min-height: 100vh;
+    flex-direction: column;
+  }
+
+  .step.active { display: flex; }
+
+  .welcome-logo {
+    font-size: 64px;
+    text-align: center;
+    margin: 24px 0 16px;
+    animation: bounce 2s ease-in-out infinite;
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  .welcome-title {
+    font-size: 32px;
+    font-weight: 800;
+    text-align: center;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+  }
+
+  .welcome-title span { color: var(--yellow); }
+
+  .welcome-sub {
+    text-align: center;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 32px;
+  }
+
+  .info-box {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--cyan);
+    padding: 16px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+
+  .info-box strong { color: var(--text); }
+  .info-box.warn { border-left-color: var(--yellow); }
+  .info-box.success { border-left-color: var(--green); }
+  .info-box.danger { border-left-color: var(--red); }
+
+  .step-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .step-sub {
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+
+  .corp-group {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+
+  .corp-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+
+  .corp-header:hover { background: var(--card2); }
+  .corp-icon { font-size: 22px; }
+  .corp-info { flex: 1; }
+
+  .corp-name {
+    font-size: 15px;
+    font-weight: 700;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .corp-desc {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  .corp-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .corp-expand {
+    color: var(--muted);
+    font-size: 12px;
+    transition: transform 0.2s;
+  }
+
+  .corp-group.open .corp-expand { transform: rotate(180deg); }
+
+  .corp-domains {
+    display: none;
+    padding: 0 16px 16px 50px;
+    border-top: 1px solid var(--line);
+  }
+
+  .corp-group.open .corp-domains { display: block; }
+
+  .corp-warning {
+    font-size: 12px;
+    color: var(--yellow);
+    padding: 10px 0 12px;
+    line-height: 1.5;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 10px;
+  }
+
+  .domain-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(30,35,48,0.5);
+  }
+
+  .domain-item:last-child { border-bottom: none; }
+
+  .domain-item label {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .domain-item .domain-note {
+    font-size: 11px;
+    color: var(--muted);
+    display: block;
+  }
+
+  input[type="checkbox"] {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--line);
+    border-radius: 4px;
+    background: var(--bg);
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+
+  input[type="checkbox"]:checked {
+    background: var(--green);
+    border-color: var(--green);
+  }
+
+  input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    top: -1px;
+    left: 2px;
+    font-size: 12px;
+    color: white;
+    font-weight: 700;
+  }
+
+  .corp-master {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--line);
+    border-radius: 4px;
+    background: var(--bg);
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+
+  .corp-master:checked {
+    background: var(--yellow);
+    border-color: var(--yellow);
+  }
+
+  .corp-master:checked::after {
+    content: '✓';
+    position: absolute;
+    top: -1px;
+    left: 2px;
+    font-size: 13px;
+    color: #000;
+    font-weight: 900;
+  }
+
+  .custom-section {
+    margin-top: 16px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px;
+  }
+
+  .custom-section h4 {
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .custom-input-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .custom-input-row input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    outline: none;
+  }
+
+  .custom-input-row input:focus { border-color: var(--yellow); }
+
+  .btn-add {
+    background: var(--yellow);
+    color: #000;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .custom-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .custom-tag {
+    background: var(--card2);
+    border: 1px solid var(--line);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text);
+  }
+
+  .custom-tag button {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0;
+    line-height: 1;
+  }
+
+  .gbm-hero {
+    text-align: center;
+    padding: 20px 0 24px;
+  }
+
+  .gbm-icon { font-size: 72px; margin-bottom: 12px; display: block; }
+
+  .feature-toggle {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px 18px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .feature-toggle-info { flex: 1; }
+
+  .feature-toggle-info h4 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .feature-toggle-info p {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .toggle-switch {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .toggle-switch input { display: none; }
+
+  .toggle-track {
+    position: absolute;
+    inset: 0;
+    background: var(--line);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .toggle-track::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    background: var(--muted);
+    border-radius: 50%;
+    transition: all 0.2s;
+  }
+
+  .toggle-switch input:checked + .toggle-track { background: var(--green); }
+  .toggle-switch input:checked + .toggle-track::after {
+    transform: translateX(20px);
+    background: white;
+  }
+
+  .mode-card {
+    background: var(--card);
+    border: 2px solid var(--line);
+    border-radius: 10px;
+    padding: 18px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+
+  .mode-card:hover { border-color: var(--yellow); }
+  .mode-card.selected { border-color: var(--yellow); background: rgba(245,200,0,0.05); }
+
+  .mode-radio {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--line);
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 2px;
+    position: relative;
+    transition: border-color 0.15s;
+  }
+
+  .mode-card.selected .mode-radio { border-color: var(--yellow); }
+
+  .mode-card.selected .mode-radio::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 10px;
+    height: 10px;
+    background: var(--yellow);
+    border-radius: 50%;
+  }
+
+  .mode-info h4 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .mode-info p {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .mode-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  .badge-recommended { background: rgba(34,197,94,0.15); color: var(--green); }
+  .badge-power { background: rgba(230,51,41,0.15); color: var(--red); }
+  .badge-light { background: rgba(30,111,200,0.15); color: var(--cyan); }
+
+  .done-hero {
+    text-align: center;
+    padding: 32px 0 24px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .done-icon { font-size: 80px; margin-bottom: 20px; animation: bounce 1.5s ease-in-out infinite; }
+
+  .done-title {
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 10px;
+  }
+
+  .done-title span { color: var(--yellow); }
+
+  .done-summary {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin: 20px 0;
+    width: 100%;
+    text-align: left;
+  }
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+  }
+
+  .summary-row:last-child { border-bottom: none; }
+  .summary-label { color: var(--muted); }
+  .summary-value { color: var(--green); font-weight: 600; }
+
+  .nav-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: auto;
+    padding-top: 24px;
+  }
+
+  .btn-back {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    padding: 14px 20px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-back:hover { border-color: var(--text); color: var(--text); }
+
+  .btn-next {
+    flex: 1;
+    background: var(--yellow);
+    color: #000;
+    border: none;
+    padding: 14px 20px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-next:hover { background: #fff; transform: translateY(-1px); }
+
+  .btn-finish {
+    flex: 1;
+    background: var(--green);
+    color: #000;
+    border: none;
+    padding: 14px 20px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-finish:hover { background: #4ade80; }
+
+  .step-counter {
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 20px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-bar">
+  <div class="progress-fill" id="progress" style="width: 20%"></div>
+</div>
+
+<!-- STEP 1: WELCOME -->
+<div class="step active" id="step-1">
+  <div class="welcome-logo">🥊🍪</div>
+  <h1 class="welcome-title">Welcome to <span>TrackRSmackR</span></h1>
+  <p class="welcome-sub">The Cookie Bouncer is ready to work. Let's take 60 seconds to set up your safe list so you stay logged in everywhere you need to be — while we smack the trackers that follow you everywhere else.</p>
+
+  <div class="info-box">
+    <strong>How TrackRSmackR works:</strong> We intercept every cookie your browser receives, classify it by purpose, and sort it into one of two encrypted Cookie Jars. The Guest List Jar holds session-approved cookies — the ones you need to stay logged in. Encrypted, persistent, protected. Everything else gets bounced into the Bounced Jar: encrypted containment with a 30-second clock. When the timer hits zero, it's smashed. Gone. No recovery. All of this happens locally on your device. Nothing leaves your browser — except our TrackRSmackR Cookie Clones. Which don't clone your information. They are clones of our Gingerbread Man: a generic, non-identifiable, standardized decoy that replaces your real cookie data with cookie-cut data as a safety layer.
+  </div>
+
+  <div class="info-box warn">
+    <strong>⚠️ About session cookies:</strong> Some cookies are actually necessary. Login sessions, shopping carts, and preferences all rely on cookies that your browser needs to keep you signed in. Big platforms like Google, Apple, and Microsoft use dozens of these across multiple domains. We'll help you decide which ones to trust — so you stay logged in without sacrificing your privacy everywhere else.
+  </div>
+
+  <div class="info-box success">
+    <strong>🍪 Meet the Gingerbread Man:</strong> For sites you don't allowlist, TrackRSmackR serves up a decoy — a synthetic cookie identity that's identical for every tracker, everywhere. They all get the same fake signal. No real you. No real profile. Just a Gingerbread Man.
+  </div>
+
+  <div class="nav-buttons">
+    <button class="btn-next" onclick="goTo(2)">Let's Set Up My Safe List →</button>
+  </div>
+</div>
+
+<!-- STEP 2: ALLOWLIST -->
+<div class="step" id="step-2">
+  <p class="step-counter">Step 2 of 5 — Safe List</p>
+  <h2 class="step-title">Build Your Safe List</h2>
+  <p class="step-sub">Check the platforms you use. TrackRSmackR will allow their session cookies so you stay logged in. Uncheck anything you want fully blocked — but read the warnings first.</p>
+
+  <!-- GOOGLE -->
+  <div class="corp-group" id="group-google">
+    <div class="corp-header" onclick="toggleGroup('google')">
+      <span class="corp-icon">🔵</span>
+      <div class="corp-info">
+        <span class="corp-name">Google</span>
+        <span class="corp-desc">Search, Gmail, YouTube, Drive, Maps, Chrome sync, and more</span>
+      </div>
+      <div class="corp-toggle">
+        <input type="checkbox" class="corp-master" id="master-google" checked onclick="toggleMaster('google', event)">
+        <span class="corp-expand">▼</span>
+      </div>
+    </div>
+    <div class="corp-domains">
+      <p class="corp-warning">⚠️ Google operates across many domains. Blocking these will sign you out of Gmail, YouTube, Google Drive, Maps, and any site that uses Sign in with Google. We recommend keeping these checked.</p>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="google" checked><label>google.com <span class="domain-note">Core search and account services</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="google" checked><label>accounts.google.com <span class="domain-note">Login and authentication</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="google" checked><label>gmail.com <span class="domain-note">Email</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="google" checked><label>youtube.com <span class="domain-note">Video — requires session to save history and preferences</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="google" checked><label>drive.google.com <span class="domain-note">Cloud storage</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="google" checked><label>docs.google.com <span class="domain-note">Documents</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="google" checked><label>maps.google.com <span class="domain-note">Maps and location</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="google" checked><label>play.google.com <span class="domain-note">App store and purchases</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="google" checked><label>googleapis.com <span class="domain-note">Backend API — required for most Google services</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="google" checked><label>gstatic.com <span class="domain-note">Static content delivery — required for UI to load</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="google" checked><label>googleusercontent.com <span class="domain-note">User-generated content and profile photos</span></label></div>
+    </div>
+  </div>
+
+  <!-- APPLE -->
+  <div class="corp-group" id="group-apple">
+    <div class="corp-header" onclick="toggleGroup('apple')">
+      <span class="corp-icon">🍎</span>
+      <div class="corp-info">
+        <span class="corp-name">Apple</span>
+        <span class="corp-desc">iCloud, App Store, Apple ID, backups, iMessage web, and device services</span>
+      </div>
+      <div class="corp-toggle">
+        <input type="checkbox" class="corp-master" id="master-apple" checked onclick="toggleMaster('apple', event)">
+        <span class="corp-expand">▼</span>
+      </div>
+    </div>
+    <div class="corp-domains">
+      <p class="corp-warning">⚠️ Apple's services span many backend domains. Blocking these can break iCloud sync, Apple ID login, App Store purchases, iCloud backups, and Find My. If you use any Apple device or service, keep these checked.</p>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="apple" checked><label>apple.com <span class="domain-note">Core Apple services and Apple ID</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="apple" checked><label>icloud.com <span class="domain-note">iCloud web access — mail, photos, drive</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="apple" checked><label>appleid.apple.com <span class="domain-note">Apple ID authentication</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="apple" checked><label>idmsa.apple.com <span class="domain-note">Identity management and sign-in</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="apple" checked><label>icloud-content.com <span class="domain-note">iCloud content delivery</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="apple" checked><label>mzstatic.com <span class="domain-note">App Store and iTunes static assets</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="apple" checked><label>itunes.apple.com <span class="domain-note">iTunes and media purchases</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="apple" checked><label>apps.apple.com <span class="domain-note">App Store</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="apple" checked><label>buy.itunes.apple.com <span class="domain-note">Purchase backend</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="apple" checked><label>setup.icloud.com <span class="domain-note">iCloud setup and configuration</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="apple" checked><label>p-courier.push.apple.com <span class="domain-note">Push notifications backend</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="apple" checked><label>keyvalueservice.icloud.com <span class="domain-note">iCloud key-value sync</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="apple" checked><label>caldav.icloud.com <span class="domain-note">iCloud Calendar sync</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="apple" checked><label>carddav.icloud.com <span class="domain-note">iCloud Contacts sync</span></label></div>
+    </div>
+  </div>
+
+  <!-- MICROSOFT -->
+  <div class="corp-group" id="group-microsoft">
+    <div class="corp-header" onclick="toggleGroup('microsoft')">
+      <span class="corp-icon">🪟</span>
+      <div class="corp-info">
+        <span class="corp-name">Microsoft</span>
+        <span class="corp-desc">Outlook, OneDrive, Teams, Xbox, Office 365, Azure, and Windows services</span>
+      </div>
+      <div class="corp-toggle">
+        <input type="checkbox" class="corp-master" id="master-microsoft" checked onclick="toggleMaster('microsoft', event)">
+        <span class="corp-expand">▼</span>
+      </div>
+    </div>
+    <div class="corp-domains">
+      <p class="corp-warning">⚠️ Microsoft services rely on a shared authentication backend across dozens of domains. Blocking these can break Outlook, OneDrive, Teams, Office 365, Xbox, and Windows Update in browser.</p>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="microsoft" checked><label>microsoft.com <span class="domain-note">Core Microsoft services</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="microsoft" checked><label>live.com <span class="domain-note">Microsoft account login</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="microsoft" checked><label>outlook.com <span class="domain-note">Email</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="microsoft" checked><label>hotmail.com <span class="domain-note">Legacy email, same backend as Outlook</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="microsoft" checked><label>onedrive.com <span class="domain-note">Cloud storage</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="microsoft" checked><label>sharepoint.com <span class="domain-note">Teams and Office collaboration</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="microsoft" checked><label>office.com <span class="domain-note">Office 365 web apps</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="microsoft" checked><label>microsoftonline.com <span class="domain-note">Azure AD authentication — required for work and school accounts</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="microsoft" checked><label>login.microsoftonline.com <span class="domain-note">Login backend</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="microsoft" checked><label>azure.com <span class="domain-note">Azure cloud services</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="microsoft" checked><label>bing.com <span class="domain-note">Search — also powers Copilot</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="microsoft" checked><label>xbox.com <span class="domain-note">Xbox gaming services</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="microsoft" checked><label>msftconnecttest.com <span class="domain-note">Windows network connectivity check</span></label></div>
+    </div>
+  </div>
+
+  <!-- SOCIAL -->
+  <div class="corp-group" id="group-social">
+    <div class="corp-header" onclick="toggleGroup('social')">
+      <span class="corp-icon">💬</span>
+      <div class="corp-info">
+        <span class="corp-name">Social Platforms</span>
+        <span class="corp-desc">Facebook, Instagram, Twitter/X, Reddit, LinkedIn, TikTok</span>
+      </div>
+      <div class="corp-toggle">
+        <input type="checkbox" class="corp-master" id="master-social" onclick="toggleMaster('social', event)">
+        <span class="corp-expand">▼</span>
+      </div>
+    </div>
+    <div class="corp-domains">
+      <p class="corp-warning">⚠️ Social platforms are among the most aggressive trackers on the internet. Their session cookies are required to stay logged in — but they also embed trackers on millions of other sites. Unchecked by default. Check only the ones you actively use.</p>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="social"><label>facebook.com <span class="domain-note">Required to stay logged into Facebook</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="social"><label>instagram.com <span class="domain-note">Required to stay logged into Instagram</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="social"><label>twitter.com <span class="domain-note">Twitter/X session</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="social"><label>x.com <span class="domain-note">Twitter/X new domain</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="social"><label>reddit.com <span class="domain-note">Reddit session</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="social"><label>linkedin.com <span class="domain-note">LinkedIn session</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="social"><label>tiktok.com <span class="domain-note">TikTok session</span></label></div>
+    </div>
+  </div>
+
+  <!-- SHOPPING AND STREAMING -->
+  <div class="corp-group" id="group-other">
+    <div class="corp-header" onclick="toggleGroup('other')">
+      <span class="corp-icon">🛒</span>
+      <div class="corp-info">
+        <span class="corp-name">Shopping and Streaming</span>
+        <span class="corp-desc">Amazon, Netflix, Spotify, GitHub, Kickstarter, and more</span>
+      </div>
+      <div class="corp-toggle">
+        <input type="checkbox" class="corp-master" id="master-other" checked onclick="toggleMaster('other', event)">
+        <span class="corp-expand">▼</span>
+      </div>
+    </div>
+    <div class="corp-domains">
+      <p class="corp-warning">⚠️ Shopping and streaming sites require session cookies to maintain your cart, purchases, and playback state. Blocking these will sign you out and may lose cart contents.</p>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="other" checked><label>amazon.com <span class="domain-note">Shopping, Prime Video, AWS</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="other" checked><label>netflix.com <span class="domain-note">Streaming — session required for playback</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="other" checked><label>spotify.com <span class="domain-note">Music streaming</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="other" checked><label>github.com <span class="domain-note">Developer platform</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="other" checked><label>kickstarter.com <span class="domain-note">Crowdfunding — required for account and pledges</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="other" checked><label>paypal.com <span class="domain-note">Payment processing — session critical</span></label></div>
+      <div class="domain-item"><input type="checkbox" class="corp-domain" data-corp="other" checked><label>stripe.com <span class="domain-note">Payment backend used by many sites</span></label></div>
+    </div>
+  </div>
+
+  <!-- CUSTOM -->
+  <div class="custom-section">
+    <h4>Add Your Own Sites</h4>
+    <div class="custom-input-row">
+      <input type="text" id="custom-domain" placeholder="example.com" onkeydown="if(event.key==='Enter') addCustom()">
+      <button class="btn-add" onclick="addCustom()">Add</button>
+    </div>
+    <div class="custom-tags" id="custom-tags"></div>
+  </div>
+
+  <div class="nav-buttons">
+    <button class="btn-back" onclick="goTo(1)">← Back</button>
+    <button class="btn-next" onclick="goTo(3)">Next: The Gingerbread Man →</button>
+  </div>
+</div>
+
+<!-- STEP 3: GINGERBREAD MAN -->
+<div class="step" id="step-3">
+  <p class="step-counter">Step 3 of 5 — Gingerbread Man Mode</p>
+
+  <div class="gbm-hero">
+    <span class="gbm-icon">🫚🍪</span>
+    <h2 class="step-title">Meet the Gingerbread Man</h2>
+    <p class="step-sub">For sites not on your safe list, TrackRSmackR serves up a decoy — a synthetic cookie identity that's identical for every tracker, everywhere. They all get the same fake signal. No real you. No real profile.</p>
+  </div>
+
+  <div class="info-box">
+    <strong>How it works:</strong> Real trackers build profiles by collecting unique signals — your cookie IDs, your fingerprint, your behavior patterns. The Gingerbread Man scrambles that by presenting a standardized synthetic identity. Every tracker gets the same cookie. It's like giving every surveillance camera in the city the same face to photograph.
+  </div>
+
+  <div class="info-box success">
+    <strong>Same logic as Uniform Persona Mode:</strong> Just as we normalize your browser fingerprint so every site sees the same generic browser — we normalize your cookie identity so every tracker sees the same generic user. One Gingerbread Man. Millions of trackers. Zero profiles built on you.
+  </div>
+
+  <div class="feature-toggle">
+    <div class="feature-toggle-info">
+      <h4>🫚 Gingerbread Man Mode</h4>
+      <p>Present a standardized synthetic cookie identity to all non-allowlisted sites. Trackers get a decoy. You get privacy.</p>
+    </div>
+    <label class="toggle-switch">
+      <input type="checkbox" id="toggle-gbm" checked>
+      <div class="toggle-track"></div>
+    </label>
+  </div>
+
+  <div class="feature-toggle">
+    <div class="feature-toggle-info">
+      <h4>👤 Uniform Persona Mode</h4>
+      <p>Normalize your browser fingerprint so every site sees the same generic browser profile. No unique fingerprint to track.</p>
+    </div>
+    <label class="toggle-switch">
+      <input type="checkbox" id="toggle-persona" checked>
+      <div class="toggle-track"></div>
+    </label>
+  </div>
+
+  <div class="feature-toggle">
+    <div class="feature-toggle-info">
+      <h4>🔄 Regenerative Cookie Shield</h4>
+      <p>Detect and block cookies that attempt to respawn after deletion. Some trackers are persistent. We are more persistent.</p>
+    </div>
+    <label class="toggle-switch">
+      <input type="checkbox" id="toggle-regen" checked>
+      <div class="toggle-track"></div>
+    </label>
+  </div>
+
+  <div class="nav-buttons">
+    <button class="btn-back" onclick="goTo(2)">← Back</button>
+    <button class="btn-next" onclick="goTo(4)">Next: Choose Policy Mode →</button>
+  </div>
+</div>
+
+<!-- STEP 4: POLICY MODE -->
+<div class="step" id="step-4">
+  <p class="step-counter">Step 4 of 5 — Policy Mode</p>
+  <h2 class="step-title">How Aggressive Should the Bouncer Be?</h2>
+  <p class="step-sub">Choose your default enforcement level. You can change this anytime from the extension popup.</p>
+
+  <div class="mode-card selected" id="mode-balanced" onclick="selectMode('balanced')">
+    <div class="mode-radio"></div>
+    <div class="mode-info">
+      <h4>Balanced <span class="mode-badge badge-recommended">Recommended</span></h4>
+      <p>Decay unknown cookies on a timer. Preserve session cookies from your safe list. Tutor Swarm adapts automatically. Best for most users — strong privacy without breaking sites.</p>
+    </div>
+  </div>
+
+  <div class="mode-card" id="mode-strict" onclick="selectMode('strict')">
+    <div class="mode-radio"></div>
+    <div class="mode-info">
+      <h4>Strict <span class="mode-badge badge-power">Power User</span></h4>
+      <p>Smack everything that is not explicitly on your safe list. Maximum privacy. Some sites may behave unexpectedly. You can use the Breakage Budget to auto-relax when needed.</p>
+    </div>
+  </div>
+
+  <div class="mode-card" id="mode-permissive" onclick="selectMode('permissive')">
+    <div class="mode-radio"></div>
+    <div class="mode-info">
+      <h4>Permissive <span class="mode-badge badge-light">Light Touch</span></h4>
+      <p>Observe and log cookie activity. Minimal enforcement. Good if you want to understand your cookie landscape before going harder.</p>
+    </div>
+  </div>
+
+  <div class="nav-buttons">
+    <button class="btn-back" onclick="goTo(3)">← Back</button>
+    <button class="btn-next" onclick="goTo(5)">Almost Done →</button>
+  </div>
+</div>
+
+<!-- STEP 5: DONE -->
+<div class="step" id="step-5">
+  <div class="done-hero">
+    <span class="done-icon">🥊</span>
+    <h2 class="done-title">The <span>Bouncer</span> is On the Door.</h2>
+    <p style="color: var(--muted); font-size: 15px; line-height: 1.6; margin-bottom: 8px;">You are set up. TrackRSmackR is active, your safe list is loaded, and the Gingerbread Man is standing by. Trackers do not stand a chance.</p>
+
+    <div class="done-summary" id="done-summary"></div>
+
+    <p style="font-size: 13px; color: var(--muted); line-height: 1.6;">You can adjust any of these settings anytime from the extension popup. The Bouncer never sleeps.</p>
+  </div>
+
+  <div class="nav-buttons">
+    <button class="btn-finish" onclick="finishSetup()">🥊 Start Smacking Trackers</button>
+  </div>
+</div>
+
+<script>
+let currentStep = 1;
+let selectedMode = 'balanced';
+let customDomains = [];
+
+const progressMap = { 1: 20, 2: 40, 3: 60, 4: 80, 5: 100 };
+
+function goTo(step) {
+  document.getElementById(`step-${currentStep}`).classList.remove('active');
+  currentStep = step;
+  document.getElementById(`step-${currentStep}`).classList.add('active');
+  document.getElementById('progress').style.width = progressMap[step] + '%';
+  if (step === 5) buildSummary();
+  window.scrollTo(0, 0);
+}
+
+function toggleGroup(id) {
+  const group = document.getElementById(`group-${id}`);
+  group.classList.toggle('open');
+}
+
+function toggleMaster(corp, event) {
+  event.stopPropagation();
+  const master = document.getElementById(`master-${corp}`);
+  const domains = document.querySelectorAll(`.corp-domain[data-corp="${corp}"]`);
+  domains.forEach(d => d.checked = master.checked);
+}
+
+function selectMode(mode) {
+  ['balanced', 'strict', 'permissive'].forEach(m => {
+    document.getElementById(`mode-${m}`).classList.remove('selected');
+  });
+  document.getElementById(`mode-${mode}`).classList.add('selected');
+  selectedMode = mode;
+}
+
+function addCustom() {
+  const input = document.getElementById('custom-domain');
+  const val = input.value.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
+  if (!val || customDomains.includes(val)) { input.value = ''; return; }
+  customDomains.push(val);
+  renderCustomTags();
+  input.value = '';
+}
+
+function removeCustom(domain) {
+  customDomains = customDomains.filter(d => d !== domain);
+  renderCustomTags();
+}
+
+function renderCustomTags() {
+  const container = document.getElementById('custom-tags');
+  container.innerHTML = customDomains.map(d =>
+    `<div class="custom-tag">${d}<button onclick="removeCustom('${d}')">×</button></div>`
+  ).join('');
+}
+
+function getAllowlist() {
+  const checked = Array.from(document.querySelectorAll('.corp-domain:checked'))
+    .map(cb => cb.nextElementSibling.textContent.split('\n')[0].trim());
+  return [...new Set([...checked, ...customDomains])];
+}
+
+function buildSummary() {
+  const allowlist = getAllowlist();
+  const gbm = document.getElementById('toggle-gbm').checked;
+  const persona = document.getElementById('toggle-persona').checked;
+  const regen = document.getElementById('toggle-regen').checked;
+
+  document.getElementById('done-summary').innerHTML = `
+    <div class="summary-row"><span class="summary-label">Policy Mode</span><span class="summary-value">${selectedMode.charAt(0).toUpperCase() + selectedMode.slice(1)}</span></div>
+    <div class="summary-row"><span class="summary-label">Safe List</span><span class="summary-value">${allowlist.length} domains allowlisted</span></div>
+    <div class="summary-row"><span class="summary-label">Gingerbread Man Mode</span><span class="summary-value">${gbm ? '✓ Active' : '✗ Off'}</span></div>
+    <div class="summary-row"><span class="summary-label">Uniform Persona Mode</span><span class="summary-value">${persona ? '✓ Active' : '✗ Off'}</span></div>
+    <div class="summary-row"><span class="summary-label">Regenerative Cookie Shield</span><span class="summary-value">${regen ? '✓ Active' : '✗ Off'}</span></div>
+  `;
+}
+
+function finishSetup() {
+  const allowlist = getAllowlist();
+  const settings = {
+    onboardingComplete: true,
+    allowlist,
+    mode: selectedMode,
+    gingerbreadManEnabled: document.getElementById('toggle-gbm').checked,
+    uniformPersona: document.getElementById('toggle-persona').checked,
+    regenShield: document.getElementById('toggle-regen').checked,
+  };
+  if (typeof chrome !== 'undefined' && chrome.storage) {
+    chrome.storage.local.set(settings, () => {
+      window.close();
+    });
+  } else {
+    console.log('Settings:', settings);
+  }
+}
+</script>
+</body>
+</html>

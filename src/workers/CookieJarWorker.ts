@@ -20,9 +20,36 @@ type JarStore = Record<string, JarEntry>;
 export class CookieJarWorker {
   private vaultKey: CryptoKey | null = null;
   private quarantineKey: CryptoKey | null = null;
+  private sessionApprovedDomains: Set<string> = new Set();
 
   public static entryId(domain: string, name: string): string {
     return `${domain}|${name}`;
+  }
+
+  public approveForSession(domain: string): void {
+    this.sessionApprovedDomains.add(domain);
+  }
+
+  public async approvePermanently(domain: string): Promise<void> {
+    this.sessionApprovedDomains.add(domain);
+
+    const data = (await chrome.storage.local.get('allowlist')) as { allowlist?: unknown };
+    const existing = Array.isArray(data.allowlist)
+      ? (data.allowlist.filter((entry) => typeof entry === 'string') as string[])
+      : [];
+
+    if (!existing.includes(domain)) {
+      existing.push(domain);
+      await chrome.storage.local.set({ allowlist: existing });
+    }
+  }
+
+  public isSessionApproved(domain: string): boolean {
+    return this.sessionApprovedDomains.has(domain);
+  }
+
+  public sessionApprovedCount(): number {
+    return this.sessionApprovedDomains.size;
   }
 
   public async init(): Promise<void> {

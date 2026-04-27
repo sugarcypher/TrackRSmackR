@@ -1,4 +1,4 @@
-import { AuditLog, type AuditEntry } from '../core/AuditLog.js';
+import { AuditLog, type AuditEntry, type AuditOutcome } from '../core/AuditLog.js';
 
 type PopupSettings = {
   policyMode?: string;
@@ -17,6 +17,14 @@ interface IntelligenceSummary {
   driftAlerts: DriftAlert[];
 }
 
+interface SessionApprovedResponse {
+  ok?: boolean;
+  sessionApprovedCount?: number;
+  error?: string;
+}
+
+const sessionApprovedOverrides = new Map<number, AuditOutcome>();
+
 function normalizeAllowlist(raw: string): string[] {
   const values = raw
     .split(/[\n,]/)
@@ -32,6 +40,10 @@ function escapeHtml(text: string): string {
     .replace(/>/g, '&gt;')
     .replace(/\"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+function escapeAttr(text: string): string {
+  return escapeHtml(text);
 }
 
 function makeDriftKey(entry: AuditEntry): string {
@@ -160,6 +172,50 @@ function renderSummary(history: AuditEntry[]): void {
     .join('');
 }
 
+function renderSessionApprovedCount(count: number): void {
+  const sessionApprovedEl = document.getElementById('summary-session-approved');
+  if (sessionApprovedEl instanceof HTMLElement) {
+    sessionApprovedEl.innerText = String(count);
+  }
+}
+
+function buildEntryHtml(entry: AuditEntry, index: number): string {
+  const reason = entry.policyReason ?? entry.reason;
+  const explanation = entry.explanation && entry.explanation !== entry.reason ? entry.explanation : '';
+  const signals = entry.adaptationSignals ?? [];
+  const signalText =
+    signals.length > 0 ? `<div class="log-signals">Signals: ${escapeHtml(signals.join(', '))}</div>` : '';
+
+  const displayedOutcome: AuditOutcome | undefined =
+    sessionApprovedOverrides.get(index) ?? entry.outcome;
+  const outcomeHtml = displayedOutcome
+    ? `<div class="log-meta" data-role="outcome">Outcome: ${escapeHtml(displayedOutcome)}</div>`
+    : '';
+
+  const isTrustable =
+    (entry.action === 'QUARANTINE' || entry.action === 'DECAY') &&
+    displayedOutcome !== 'SESSION_APPROVED';
+
+  const trustControls = isTrustable
+    ? `<div class="log-actions" data-role="actions">
+        <button type="button" class="trust-button" data-domain="${escapeAttr(entry.domain)}" data-permanent="false">Trust this site</button>
+        <button type="button" class="trust-always" data-domain="${escapeAttr(entry.domain)}" data-permanent="true" title="Add to permanent allowlist">Always trust</button>
+      </div>`
+    : displayedOutcome === 'SESSION_APPROVED'
+      ? `<div class="log-actions"><span class="trust-status">✓ Session approved</span></div>`
+      : '';
+
+  return `<div class="log-entry" data-entry-index="${index}">
+      <div class="log-title">${escapeHtml(entry.action)} · ${escapeHtml(entry.name)}</div>
+      <div class="log-meta">${escapeHtml(entry.domain)} · ${new Date(entry.timestamp).toLocaleTimeString()}</div>
+      <div class="log-reason">${escapeHtml(reason)}</div>
+      ${explanation ? `<div class="log-reason">${escapeHtml(explanation)}</div>` : ''}
+      ${signalText}
+      ${outcomeHtml}
+      ${trustControls}
+    </div>`;
+}
+
 function renderHistory(logDiv: HTMLElement, history: AuditEntry[]): void {
   if (history.length === 0) {
     logDiv.innerText = 'No tracking events detected yet.';
@@ -168,23 +224,116 @@ function renderHistory(logDiv: HTMLElement, history: AuditEntry[]): void {
 
   const recentEntries = history.slice(-12).reverse();
   logDiv.innerHTML = recentEntries
-    .map((entry) => {
-      const reason = entry.policyReason ?? entry.reason;
-      const explanation = entry.explanation && entry.explanation !== entry.reason ? entry.explanation : '';
-      const signals = entry.adaptationSignals ?? [];
-      const signalText =
-        signals.length > 0 ? `<div class="log-signals">Signals: ${escapeHtml(signals.join(', '))}</div>` : '';
-
-      return `<div class="log-entry">
-          <div class="log-title">${escapeHtml(entry.action)} · ${escapeHtml(entry.name)}</div>
-          <div class="log-meta">${escapeHtml(entry.domain)} · ${new Date(entry.timestamp).toLocaleTimeString()}</div>
-          <div class="log-reason">${escapeHtml(reason)}</div>
-          ${explanation ? `<div class="log-reason">${escapeHtml(explanation)}</div>` : ''}
-          ${signalText}
-          ${entry.outcome ? `<div class="log-meta">Outcome: ${escapeHtml(entry.outcome)}</div>` : ''}
-        </div>`;
-    })
+    .map((entry, idx) => buildEntryHtml(entry, idx))
     .join('');
+}
+
+async function dispatchSessionApprove(
+  domain: string,
+  permanent: boolean
+): Promise<SessionApprovedResponse> {
+  if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.sendMessage) {
+    return { ok: false, error: 'chrome.runtime unavailable' };
+  }
+
+  try {
+    const response = (await chrome.runtime.sendMessage({
+      type: 'SESSION_APPROVE_DOMAIN',
+      payload: { domain, permanent }
+    })) as SessionApprovedResponse;
+
+    return response ?? { ok: false };
+  } catch (error) {
+    return { ok: false, error: String(error) };
+  }
+}
+
+async function fetchSessionApprovedCount(): Promise<number> {
+  if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.sendMessage) {
+    return 0;
+  }
+
+  try {
+    const response = (await chrome.runtime.sendMessage({
+      type: 'GET_SESSION_APPROVED_COUNT'
+    })) as SessionApprovedResponse;
+
+    return typeof response?.sessionApprovedCount === 'number' ? response.sessionApprovedCount : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function applySessionApprovedToEntry(
+  entryDiv: HTMLElement,
+  index: number
+): void {
+  sessionApprovedOverrides.set(index, 'SESSION_APPROVED');
+
+  const outcomeEl = entryDiv.querySelector('[data-role="outcome"]');
+  if (outcomeEl instanceof HTMLElement) {
+    outcomeEl.textContent = 'Outcome: SESSION_APPROVED';
+  } else {
+    const newOutcome = document.createElement('div');
+    newOutcome.className = 'log-meta';
+    newOutcome.setAttribute('data-role', 'outcome');
+    newOutcome.textContent = 'Outcome: SESSION_APPROVED';
+    entryDiv.appendChild(newOutcome);
+  }
+
+  const actionsEl = entryDiv.querySelector('[data-role="actions"]');
+  if (actionsEl instanceof HTMLElement) {
+    actionsEl.innerHTML = '<span class="trust-status">✓ Session approved</span>';
+    actionsEl.removeAttribute('data-role');
+  }
+}
+
+function attachTrustHandlers(logDiv: HTMLElement): void {
+  logDiv.addEventListener('click', async (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    if (!target.classList.contains('trust-button') && !target.classList.contains('trust-always')) {
+      return;
+    }
+
+    const domain = target.getAttribute('data-domain') ?? '';
+    const permanent = target.getAttribute('data-permanent') === 'true';
+    const entryDiv = target.closest('.log-entry');
+
+    if (!domain || !(entryDiv instanceof HTMLElement)) {
+      return;
+    }
+
+    const indexAttr = entryDiv.getAttribute('data-entry-index');
+    const entryIndex = indexAttr ? Number.parseInt(indexAttr, 10) : -1;
+
+    if (Number.isNaN(entryIndex) || entryIndex < 0) {
+      return;
+    }
+
+    target.setAttribute('disabled', 'true');
+
+    const response = await dispatchSessionApprove(domain, permanent);
+
+    if (!response.ok) {
+      target.removeAttribute('disabled');
+      console.error('Session approval failed', response.error);
+      return;
+    }
+
+    applySessionApprovedToEntry(entryDiv, entryIndex);
+
+    const sessionApprovedEl = document.getElementById('summary-session-approved');
+    if (
+      sessionApprovedEl instanceof HTMLElement &&
+      typeof response.sessionApprovedCount === 'number'
+    ) {
+      sessionApprovedEl.innerText = String(response.sessionApprovedCount);
+    }
+  });
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -218,4 +367,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   renderSummary(history);
   renderHistory(logDiv, history);
+  attachTrustHandlers(logDiv);
+
+  void fetchSessionApprovedCount().then((count) => renderSessionApprovedCount(count));
 });
