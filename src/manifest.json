@@ -7,7 +7,6 @@
     "cookies",
     "storage",
     "alarms",
-    "activeTab",
     "scripting"
   ],
   "host_permissions": ["<all_urls>"],
@@ -20,5 +19,11 @@
   },
   "icons": {
     "48": "assets/icon48.png"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["static/onboarding.html"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }

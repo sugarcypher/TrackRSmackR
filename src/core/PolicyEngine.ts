@@ -1,7 +1,7 @@
 import { JarType } from '../workers/CookieJarWorker.js';
 
 export type PolicyDecision = 'ALLOW' | 'BLOCK' | 'QUARANTINE' | 'DECAY';
-export type PolicyMode = 'STRICT' | 'BALANCED';
+export type PolicyMode = 'STRICT' | 'BALANCED' | 'PERMISSIVE';
 
 export interface PolicyResult {
   action: PolicyDecision;
@@ -10,8 +10,27 @@ export interface PolicyResult {
 }
 
 interface PolicySettings {
-  userAllowlist?: string[];
-  policyMode?: string;
+  userAllowlist?: unknown;
+  policyMode?: unknown;
+  allowlist?: unknown;
+  mode?: unknown;
+}
+
+function normalizeMode(value: unknown): PolicyMode | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const upper = value.toUpperCase();
+  if (upper === 'STRICT' || upper === 'BALANCED' || upper === 'PERMISSIVE') {
+    return upper;
+  }
+  return null;
+}
+
+function normalizeAllowlist(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((entry) => typeof entry === 'string').map((entry) => (entry as string).trim().toLowerCase())
+    : [];
 }
 
 export class PolicyEngine {
@@ -26,15 +45,18 @@ export class PolicyEngine {
   public async init(): Promise<void> {
     const stored = (await chrome.storage.local.get([
       'userAllowlist',
-      'policyMode'
+      'policyMode',
+      'allowlist',
+      'mode'
     ])) as PolicySettings;
 
-    this.userAllowlist = Array.isArray(stored.userAllowlist)
-      ? stored.userAllowlist.filter((domain) => typeof domain === 'string')
-      : [];
+    const fromUser = normalizeAllowlist(stored.userAllowlist);
+    const fromOnboarding = normalizeAllowlist(stored.allowlist);
+    this.userAllowlist = Array.from(new Set([...fromUser, ...fromOnboarding]));
 
-    if (stored.policyMode === 'STRICT' || stored.policyMode === 'BALANCED') {
-      this.mode = stored.policyMode;
+    const fromMode = normalizeMode(stored.mode) ?? normalizeMode(stored.policyMode);
+    if (fromMode) {
+      this.mode = fromMode;
     }
   }
 
@@ -78,9 +100,25 @@ export class PolicyEngine {
       };
     }
 
+    if (this.mode === 'STRICT') {
+      return {
+        action: 'QUARANTINE',
+        reason: 'Policy: Unknown Cookie (Strict)',
+        targetJar: JarType.QUARANTINE
+      };
+    }
+
+    if (this.mode === 'PERMISSIVE') {
+      return {
+        action: 'ALLOW',
+        reason: 'Policy: Unknown Cookie (Permissive Observe)',
+        targetJar: JarType.VAULT
+      };
+    }
+
     return {
-      action: this.mode === 'STRICT' ? 'QUARANTINE' : 'DECAY',
-      reason: this.mode === 'STRICT' ? 'Policy: Unknown Cookie (Strict)' : 'Policy: Unknown Cookie (Decay)',
+      action: 'DECAY',
+      reason: 'Policy: Unknown Cookie (Decay)',
       targetJar: JarType.QUARANTINE
     };
   }
