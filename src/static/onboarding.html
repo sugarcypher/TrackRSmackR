@@ -600,7 +600,7 @@
   </div>
 
   <div class="nav-buttons">
-    <button class="btn-next" onclick="goTo(2)">Let's Set Up My Safe List →</button>
+    <button class="btn-next" type="button" data-action="goto" data-step="2">Let's Set Up My Safe List →</button>
   </div>
 </div>
 
@@ -612,14 +612,14 @@
 
   <!-- GOOGLE -->
   <div class="corp-group" id="group-google">
-    <div class="corp-header" onclick="toggleGroup('google')">
+    <div class="corp-header" data-action="toggle-group" data-corp="google">
       <span class="corp-icon">🔵</span>
       <div class="corp-info">
         <span class="corp-name">Google</span>
         <span class="corp-desc">Search, Gmail, YouTube, Drive, Maps, Chrome sync, and more</span>
       </div>
       <div class="corp-toggle">
-        <input type="checkbox" class="corp-master" id="master-google" checked onclick="toggleMaster('google', event)">
+        <input type="checkbox" class="corp-master" id="master-google" checked data-action="toggle-master" data-corp="google">
         <span class="corp-expand">▼</span>
       </div>
     </div>
@@ -641,14 +641,14 @@
 
   <!-- APPLE -->
   <div class="corp-group" id="group-apple">
-    <div class="corp-header" onclick="toggleGroup('apple')">
+    <div class="corp-header" data-action="toggle-group" data-corp="apple">
       <span class="corp-icon">🍎</span>
       <div class="corp-info">
         <span class="corp-name">Apple</span>
         <span class="corp-desc">iCloud, App Store, Apple ID, backups, iMessage web, and device services</span>
       </div>
       <div class="corp-toggle">
-        <input type="checkbox" class="corp-master" id="master-apple" checked onclick="toggleMaster('apple', event)">
+        <input type="checkbox" class="corp-master" id="master-apple" checked data-action="toggle-master" data-corp="apple">
         <span class="corp-expand">▼</span>
       </div>
     </div>
@@ -673,14 +673,14 @@
 
   <!-- MICROSOFT -->
   <div class="corp-group" id="group-microsoft">
-    <div class="corp-header" onclick="toggleGroup('microsoft')">
+    <div class="corp-header" data-action="toggle-group" data-corp="microsoft">
       <span class="corp-icon">🪟</span>
       <div class="corp-info">
         <span class="corp-name">Microsoft</span>
         <span class="corp-desc">Outlook, OneDrive, Teams, Xbox, Office 365, Azure, and Windows services</span>
       </div>
       <div class="corp-toggle">
-        <input type="checkbox" class="corp-master" id="master-microsoft" checked onclick="toggleMaster('microsoft', event)">
+        <input type="checkbox" class="corp-master" id="master-microsoft" checked data-action="toggle-master" data-corp="microsoft">
         <span class="corp-expand">▼</span>
       </div>
     </div>
@@ -704,14 +704,14 @@
 
   <!-- SOCIAL -->
   <div class="corp-group" id="group-social">
-    <div class="corp-header" onclick="toggleGroup('social')">
+    <div class="corp-header" data-action="toggle-group" data-corp="social">
       <span class="corp-icon">💬</span>
       <div class="corp-info">
         <span class="corp-name">Social Platforms</span>
         <span class="corp-desc">Facebook, Instagram, Twitter/X, Reddit, LinkedIn, TikTok</span>
       </div>
       <div class="corp-toggle">
-        <input type="checkbox" class="corp-master" id="master-social" onclick="toggleMaster('social', event)">
+        <input type="checkbox" class="corp-master" id="master-social" data-action="toggle-master" data-corp="social">
         <span class="corp-expand">▼</span>
       </div>
     </div>
@@ -729,14 +729,14 @@
 
   <!-- SHOPPING AND STREAMING -->
   <div class="corp-group" id="group-other">
-    <div class="corp-header" onclick="toggleGroup('other')">
+    <div class="corp-header" data-action="toggle-group" data-corp="other">
       <span class="corp-icon">🛒</span>
       <div class="corp-info">
         <span class="corp-name">Shopping and Streaming</span>
         <span class="corp-desc">Amazon, Netflix, Spotify, GitHub, Kickstarter, and more</span>
       </div>
       <div class="corp-toggle">
-        <input type="checkbox" class="corp-master" id="master-other" checked onclick="toggleMaster('other', event)">
+        <input type="checkbox" class="corp-master" id="master-other" checked data-action="toggle-master" data-corp="other">
         <span class="corp-expand">▼</span>
       </div>
     </div>
@@ -756,15 +756,15 @@
   <div class="custom-section">
     <h4>Add Your Own Sites</h4>
     <div class="custom-input-row">
-      <input type="text" id="custom-domain" placeholder="example.com" onkeydown="if(event.key==='Enter') addCustom()">
-      <button class="btn-add" onclick="addCustom()">Add</button>
+      <input type="text" id="custom-domain" placeholder="example.com">
+      <button class="btn-add" type="button" data-action="add-custom">Add</button>
     </div>
     <div class="custom-tags" id="custom-tags"></div>
   </div>
 
   <div class="nav-buttons">
-    <button class="btn-back" onclick="goTo(1)">← Back</button>
-    <button class="btn-next" onclick="goTo(3)">Next: The Gingerbread Men →</button>
+    <button class="btn-back" type="button" data-action="goto" data-step="1">← Back</button>
+    <button class="btn-next" type="button" data-action="goto" data-step="3">Next: The Gingerbread Men →</button>
   </div>
 </div>
 
@@ -820,8 +820,8 @@
   </div>
 
   <div class="nav-buttons">
-    <button class="btn-back" onclick="goTo(2)">← Back</button>
-    <button class="btn-next" onclick="goTo(4)">Next: Choose Policy Mode →</button>
+    <button class="btn-back" type="button" data-action="goto" data-step="2">← Back</button>
+    <button class="btn-next" type="button" data-action="goto" data-step="4">Next: Choose Policy Mode →</button>
   </div>
 </div>
 
@@ -831,7 +831,7 @@
   <h2 class="step-title">How Aggressive Should the Bouncer Be?</h2>
   <p class="step-sub">Choose your default enforcement level. You can change this anytime from the extension popup.</p>
 
-  <div class="mode-card selected" id="mode-balanced" onclick="selectMode('balanced')">
+  <div class="mode-card selected" id="mode-balanced" data-action="select-mode" data-mode="balanced">
     <div class="mode-radio"></div>
     <div class="mode-info">
       <h4>Balanced <span class="mode-badge badge-recommended">Recommended</span></h4>
@@ -839,7 +839,7 @@
     </div>
   </div>
 
-  <div class="mode-card" id="mode-strict" onclick="selectMode('strict')">
+  <div class="mode-card" id="mode-strict" data-action="select-mode" data-mode="strict">
     <div class="mode-radio"></div>
     <div class="mode-info">
       <h4>Strict <span class="mode-badge badge-power">Power User</span></h4>
@@ -847,7 +847,7 @@
     </div>
   </div>
 
-  <div class="mode-card" id="mode-permissive" onclick="selectMode('permissive')">
+  <div class="mode-card" id="mode-permissive" data-action="select-mode" data-mode="permissive">
     <div class="mode-radio"></div>
     <div class="mode-info">
       <h4>Permissive <span class="mode-badge badge-light">Light Touch</span></h4>
@@ -856,8 +856,8 @@
   </div>
 
   <div class="nav-buttons">
-    <button class="btn-back" onclick="goTo(3)">← Back</button>
-    <button class="btn-next" onclick="goTo(5)">Almost Done →</button>
+    <button class="btn-back" type="button" data-action="goto" data-step="3">← Back</button>
+    <button class="btn-next" type="button" data-action="goto" data-step="5">Almost Done →</button>
   </div>
 </div>
 
@@ -874,106 +874,10 @@
   </div>
 
   <div class="nav-buttons">
-    <button class="btn-finish" onclick="finishSetup()">🥊 Start Smacking Trackers</button>
+    <button class="btn-finish" type="button" data-action="finish">🥊 Start Smacking Trackers</button>
   </div>
 </div>
 
-<script>
-let currentStep = 1;
-let selectedMode = 'balanced';
-let customDomains = [];
-
-const progressMap = { 1: 20, 2: 40, 3: 60, 4: 80, 5: 100 };
-
-function goTo(step) {
-  document.getElementById(`step-${currentStep}`).classList.remove('active');
-  currentStep = step;
-  document.getElementById(`step-${currentStep}`).classList.add('active');
-  document.getElementById('progress').style.width = progressMap[step] + '%';
-  if (step === 5) buildSummary();
-  window.scrollTo(0, 0);
-}
-
-function toggleGroup(id) {
-  const group = document.getElementById(`group-${id}`);
-  group.classList.toggle('open');
-}
-
-function toggleMaster(corp, event) {
-  event.stopPropagation();
-  const master = document.getElementById(`master-${corp}`);
-  const domains = document.querySelectorAll(`.corp-domain[data-corp="${corp}"]`);
-  domains.forEach(d => d.checked = master.checked);
-}
-
-function selectMode(mode) {
-  ['balanced', 'strict', 'permissive'].forEach(m => {
-    document.getElementById(`mode-${m}`).classList.remove('selected');
-  });
-  document.getElementById(`mode-${mode}`).classList.add('selected');
-  selectedMode = mode;
-}
-
-function addCustom() {
-  const input = document.getElementById('custom-domain');
-  const val = input.value.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
-  if (!val || customDomains.includes(val)) { input.value = ''; return; }
-  customDomains.push(val);
-  renderCustomTags();
-  input.value = '';
-}
-
-function removeCustom(domain) {
-  customDomains = customDomains.filter(d => d !== domain);
-  renderCustomTags();
-}
-
-function renderCustomTags() {
-  const container = document.getElementById('custom-tags');
-  container.innerHTML = customDomains.map(d =>
-    `<div class="custom-tag">${d}<button onclick="removeCustom('${d}')">×</button></div>`
-  ).join('');
-}
-
-function getAllowlist() {
-  const checked = Array.from(document.querySelectorAll('.corp-domain:checked'))
-    .map(cb => cb.nextElementSibling.textContent.split('\n')[0].trim());
-  return [...new Set([...checked, ...customDomains])];
-}
-
-function buildSummary() {
-  const allowlist = getAllowlist();
-  const gbm = document.getElementById('toggle-gbm').checked;
-  const persona = document.getElementById('toggle-persona').checked;
-  const regen = document.getElementById('toggle-regen').checked;
-
-  document.getElementById('done-summary').innerHTML = `
-    <div class="summary-row"><span class="summary-label">Policy Mode</span><span class="summary-value">${selectedMode.charAt(0).toUpperCase() + selectedMode.slice(1)}</span></div>
-    <div class="summary-row"><span class="summary-label">Safe List</span><span class="summary-value">${allowlist.length} domains allowlisted</span></div>
-    <div class="summary-row"><span class="summary-label">Gingerbread Men Mode</span><span class="summary-value">${gbm ? '✓ Active' : '✗ Off'}</span></div>
-    <div class="summary-row"><span class="summary-label">Uniform Persona Mode</span><span class="summary-value">${persona ? '✓ Active' : '✗ Off'}</span></div>
-    <div class="summary-row"><span class="summary-label">Regenerative Cookie Shield</span><span class="summary-value">${regen ? '✓ Active' : '✗ Off'}</span></div>
-  `;
-}
-
-function finishSetup() {
-  const allowlist = getAllowlist();
-  const settings = {
-    onboardingComplete: true,
-    allowlist,
-    mode: selectedMode,
-    gingerbreadManEnabled: document.getElementById('toggle-gbm').checked,
-    uniformPersona: document.getElementById('toggle-persona').checked,
-    regenShield: document.getElementById('toggle-regen').checked,
-  };
-  if (typeof chrome !== 'undefined' && chrome.storage) {
-    chrome.storage.local.set(settings, () => {
-      window.close();
-    });
-  } else {
-    console.log('Settings:', settings);
-  }
-}
-</script>
+<script src="onboarding.js"></script>
 </body>
 </html>

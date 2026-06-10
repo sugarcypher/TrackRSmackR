@@ -4,7 +4,7 @@
   "private": true,
   "description": "The Cookie Bouncer - Local-only privacy enforcement.",
   "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.json && cp src/manifest.json dist/manifest.json && mkdir -p dist/static && cp src/static/*.html dist/static/ && cp -R src/assets dist/",
+    "build": "rm -rf dist && tsc -p tsconfig.json && cp src/manifest.json dist/manifest.json && mkdir -p dist/static && cp src/static/*.html dist/static/ && cp src/static/*.js dist/static/ && cp -R src/assets dist/",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "smoke:extension": "node scripts/smoke-extension.mjs",
