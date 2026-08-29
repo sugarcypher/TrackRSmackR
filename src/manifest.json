@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TrackRSmackR - The Cookie Bouncer",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "description": "Autonomous privacy enforcement. Local-only by default.",
   "permissions": [
     "cookies",
@@ -10,7 +10,9 @@
     "declarativeNetRequest",
     "declarativeNetRequestWithHostAccess"
   ],
-  "host_permissions": ["<all_urls>"],
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "background": {
     "service_worker": "core/BackgroundService.js",
     "type": "module"
